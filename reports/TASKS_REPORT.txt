@@ -188,5 +188,50 @@ PART 6 — ROUND 3 (design-system export + training publish/edit)
     COMPLETED/FAILED/EXPIRED — it would have polled forever. Fixed to
     COMPLETED in Dashboard + Invoices.
 33. Verification: tsc clean, tokens JSON valid, vite build success.
+--------------------------------------------------------------
+PART 7 — BACKEND ALIGNMENT & LIVE INTEGRATION (2026-09-22)
+--------------------------------------------------------------
+34. Backend delivered (wst-workshop-manager-main, NestJS, base /api/v1)
+    became the source of truth; backend kept READ-ONLY (hash-verified:
+    350/350 source files unchanged; only npm's package-lock rewrite +
+    gitignored node_modules/dist/.env as runtime artifacts).
+35. src/api/resources.ts rebuilt from the implemented controllers only:
+    customers, vehicles, jobs (+approvals/work-items/stage-history),
+    inventory (+reservations/reversals/adjustments/movements), labor,
+    quality, purchasing (+approvals/goods-receipts/vendors), users/access
+    (+roles/scopes), invoices (+transitions/payments/job summary),
+    bays (+calendar), training (CRUD, no status transitions), health.
+    REMOVED speculative clients with no backend route: dashboardsApi,
+    exportsApi, assessmentsApi, certificatesApi,
+    trainingApi.transitionSession.
+36. Integration fixes: user admin uses UUID + PUT roles; job create sends
+    only accepted fields with full MAINTENANCE/REPAIR/DIAGNOSTIC/
+    INSPECTION/OTHER + LOW/NORMAL/HIGH/URGENT enums; vehicle VIN required
+    (17 chars, /^[A-HJ-NPR-Z0-9]{17}$/) with KM/MI unit select; PO rejection requires reason and new
+    orders move DRAFT->PENDING_APPROVAL; training publish button disabled
+    (no backend endpoint); Training.tsx paren syntax fixed (was blocking
+    the production build); src/api/identity.ts added (isUuid guard);
+    src/api/README.md rewritten around the implemented backend.
+37. Signup error handling (commit 1630706): errorMessage() gained
+    INTERNAL_ERROR/SERVICE_UNAVAILABLE/UNAUTHENTICATED/VALIDATION_FAILED/
+    BAD_REQUEST; SignUp fallback routes through it, so raw 5xx bodies are
+    never shown as field errors.
+38. LIVE DIAGNOSIS with both servers running (backend :3000, frontend
+    :8443): "Cannot GET /" on :3000 is the backend itself (global prefix
+    api/v1, no root route) — the UI lives at http://localhost:8443/.
+    Signup with a valid payload returns 500 INTERNAL_ERROR because the
+    backend cannot reach PostgreSQL (server log: 28P01 password
+    authentication failed for user "postgres" inside
+    AuthService.register -> runInTransaction). Frontend request verified
+    byte-correct (endpoint, method, headers, DTO fields, proxy, no CORS
+    fault). Classification: database/environment issue — signup cannot
+    succeed until real DB credentials + schema + seed exist. Backend left
+    unchanged; reported, not worked around.
+39. Verification: tsc clean, vite build success, /api/v1/health 200
+    direct + via frontend proxy, readiness 503 envelope, 401/404/400
+    envelopes all contract-shaped, frontend / 200. Combined project at
+    Desktop/Combined-Project (backend/ + frontend/ + schema/ +
+    README.md). GitHub master: 03257a0 (alignment) + 1630706 (signup
+    errors), frontend-only, no force.
 ==============================================================
 End of report.
