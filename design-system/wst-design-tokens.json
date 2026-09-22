@@ -1,0 +1,154 @@
+{
+  "$meta": {
+    "name": "WST Design System",
+    "version": "1.0.0",
+    "source": "Exported from the WST frontend Design System page (src/pages/DesignSystem.tsx) + src/index.css + src/components/ui/*",
+    "format": "W3C Design Tokens (draft)",
+    "figmaImport": "See README.md — import via Tokens Studio for Figma plugin, or recreate as Figma Variables"
+  },
+  "color": {
+    "background": { "$value": "#F8FAFC", "$type": "color", "$description": "Page background" },
+    "surface": { "$value": "#FFFFFF", "$type": "color", "$description": "Cards, panels" },
+    "border": { "$value": "#E5E7EB", "$type": "color", "$description": "Dividers, outlines" },
+    "text": {
+      "primary": { "$value": "#0F172A", "$type": "color", "$description": "Headings, body (slate-900)" },
+      "secondary": { "$value": "#64748B", "$type": "color", "$description": "Labels, captions (slate-500)" },
+      "muted": { "$value": "#94A3B8", "$type": "color", "$description": "Placeholder, disabled (slate-400)" },
+      "on-accent": { "$value": "#FFFFFF", "$type": "color", "$description": "On blue/dark surfaces" }
+    },
+    "accent": {
+      "default": { "$value": "#2563EB", "$type": "color", "$description": "Primary actions (blue-600)" },
+      "hover": { "$value": "#1D4ED8", "$type": "color", "$description": "Hover state (blue-700)" },
+      "soft-bg": { "$value": "#DBEAFE", "$type": "color", "$description": "Ghost backgrounds (blue-100)" }
+    },
+    "sidebar": {
+      "bg": { "$value": "#0F172A", "$type": "color", "$description": "Nav background (slate-900)" },
+      "text-inactive": { "$value": "#94A3B8", "$type": "color", "$description": "Inactive nav items" },
+      "text-active": { "$value": "#FFFFFF", "$type": "color", "$description": "Active nav items" }
+    },
+    "status": {
+      "success-bg": { "$value": "#DCFCE7", "$type": "color", "$description": "green-100" },
+      "success-text": { "$value": "#16A34A", "$type": "color", "$description": "green-600" },
+      "danger-bg": { "$value": "#FEE2E2", "$type": "color", "$description": "red-100" },
+      "danger-text": { "$value": "#DC2626", "$type": "color", "$description": "red-600" },
+      "info-bg": { "$value": "#DBEAFE", "$type": "color", "$description": "blue-100" },
+      "info-text": { "$value": "#2563EB", "$type": "color", "$description": "blue-600" },
+      "purple-bg": { "$value": "#EDE9FE", "$type": "color", "$description": "violet-100" },
+      "purple-text": { "$value": "#7C3AED", "$type": "color", "$description": "violet-600" },
+      "warning-bg": { "$value": "#FEF3C7", "$type": "color", "$description": "amber-100 (On Hold / needs-improvement)" },
+      "warning-text": { "$value": "#D97706", "$type": "color", "$description": "amber-600" },
+      "neutral-bg": { "$value": "#F1F5F9", "$type": "color", "$description": "slate-100 (Draft / delivered / inactive)" },
+      "neutral-text": { "$value": "#64748B", "$type": "color", "$description": "slate-500" }
+    }
+  },
+  "font": {
+    "family": {
+      "sans": { "$value": "'Inter', system-ui, sans-serif", "$type": "fontFamily", "$description": "Latin UI" },
+      "arabic": { "$value": "'Noto Sans Arabic', 'Inter', system-ui, sans-serif", "$type": "fontFamily", "$description": "Applied on <html dir=rtl>" }
+    },
+    "weight": {
+      "regular": { "$value": "400", "$type": "fontWeight" },
+      "medium": { "$value": "500", "$type": "fontWeight" },
+      "semibold": { "$value": "600", "$type": "fontWeight" },
+      "bold": { "$value": "700", "$type": "fontWeight" }
+    }
+  },
+  "typography": {
+    "page-title": { "$value": { "fontSize": "24px", "fontWeight": "700", "color": "#0F172A" }, "$type": "typography" },
+    "page-subtitle": { "$value": { "fontSize": "13px", "fontWeight": "400", "color": "#64748B" }, "$type": "typography" },
+    "kpi-number": { "$value": { "fontSize": "32px", "fontWeight": "700", "color": "#0F172A" }, "$type": "typography" },
+    "kpi-label": { "$value": { "fontSize": "13px", "fontWeight": "500", "color": "#64748B" }, "$type": "typography" },
+    "table-header": { "$value": { "fontSize": "11px", "fontWeight": "600", "color": "#94A3B8", "letterSpacing": "0.05em", "textCase": "uppercase" }, "$type": "typography" },
+    "table-body": { "$value": { "fontSize": "14px", "fontWeight": "400", "color": "#0F172A" }, "$type": "typography" },
+    "nav-item": { "$value": { "fontSize": "14px", "fontWeight": "500" }, "$type": "typography" },
+    "button-label": { "$value": { "fontSize": "14px", "fontWeight": "600" }, "$type": "typography" }
+  },
+  "spacing": {
+    "4": { "$value": "4px", "$type": "spacing" },
+    "8": { "$value": "8px", "$type": "spacing" },
+    "12": { "$value": "12px", "$type": "spacing" },
+    "16": { "$value": "16px", "$type": "spacing" },
+    "20": { "$value": "20px", "$type": "spacing" },
+    "24": { "$value": "24px", "$type": "spacing" }
+  },
+  "radius": {
+    "sm": { "$value": "8px", "$type": "borderRadius", "$description": "Buttons, inputs, chips" },
+    "md": { "$value": "12px", "$type": "borderRadius", "$description": "Cards, panels, modals" },
+    "full": { "$value": "9999px", "$type": "borderRadius", "$description": "Badges, avatars, pills" }
+  },
+  "shadow": {
+    "card": { "$value": "0 1px 3px 0 rgba(0,0,0,0.07), 0 1px 2px -1px rgba(0,0,0,0.05)", "$type": "boxShadow" },
+    "focus-ring": { "$value": "0 0 0 3px rgba(37,99,235,0.25)", "$type": "boxShadow", "$description": "Focus state (accent at 25%)" }
+  },
+  "component": {
+    "button": {
+      "radius": "8px",
+      "fontSize": "14px",
+      "fontWeight": "600",
+      "variants": {
+        "primary": { "bg": "#2563EB", "text": "#FFFFFF", "hover-bg": "#1D4ED8" },
+        "secondary": { "bg": "#FFFFFF", "text": "#0F172A", "border": "#E5E7EB" },
+        "ghost": { "bg": "transparent", "text": "#2563EB", "hover-bg": "#DBEAFE" },
+        "danger": { "bg": "#DC2626", "text": "#FFFFFF", "hover-bg": "#B91C1C" },
+        "disabled": { "bg": "#F1F5F9", "text": "#94A3B8" }
+      },
+      "sizes": { "sm": "28px height", "md": "36px height (h-9)", "icon": "32px square" }
+    },
+    "badge": {
+      "radius": "9999px",
+      "padding": "2px 10px",
+      "fontSize": "12px",
+      "fontWeight": "600",
+      "dot": "6px circle in text color",
+      "variants": {
+        "received": { "bg": "#DBEAFE", "text": "#2563EB" },
+        "in-progress": { "bg": "#FEF3C7", "text": "#D97706" },
+        "quality-check": { "bg": "#EDE9FE", "text": "#7C3AED" },
+        "ready": { "bg": "#DCFCE7", "text": "#16A34A" },
+        "delivered": { "bg": "#F1F5F9", "text": "#64748B" },
+        "pending": { "bg": "#FFF7ED", "text": "#C2410C" },
+        "approved": { "bg": "#DCFCE7", "text": "#16A34A" },
+        "rejected": { "bg": "#FEE2E2", "text": "#DC2626" },
+        "low-stock": { "bg": "#FEF3C7", "text": "#D97706" },
+        "out-of-stock": { "bg": "#FEE2E2", "text": "#DC2626" },
+        "healthy": { "bg": "#DCFCE7", "text": "#16A34A" },
+        "pass": { "bg": "#DCFCE7", "text": "#16A34A" },
+        "fail": { "bg": "#FEE2E2", "text": "#DC2626" },
+        "needs-improvement": { "bg": "#FEF3C7", "text": "#D97706" },
+        "active": { "bg": "#DCFCE7", "text": "#16A34A" },
+        "inactive": { "bg": "#F1F5F9", "text": "#64748B" }
+      }
+    },
+    "input": {
+      "height": "36px",
+      "radius": "8px",
+      "border": "#E5E7EB",
+      "focus-border": "#2563EB",
+      "error-border": "#DC2626",
+      "fontSize": "14px",
+      "placeholder": "#94A3B8"
+    },
+    "card": {
+      "radius": "12px",
+      "bg": "#FFFFFF",
+      "border": "#E5E7EB",
+      "shadow": "card",
+      "padding": "20px"
+    },
+    "table": {
+      "header": "typography.table-header",
+      "row-hover": "#F8FAFC",
+      "row-border": "#F1F5F9",
+      "cell-padding": "16px 24px"
+    },
+    "modal": {
+      "radius": "12px",
+      "overlay": "rgba(15,23,42,0.5)",
+      "sizes": { "sm": "384px", "md": "512px", "lg": "768px", "xl": "1024px" }
+    }
+  },
+  "rtl": {
+    "note": "dir=rtl on <html> for Arabic; identifiers (job numbers, VINs, plates, SKUs, amounts, phones) always render dir=ltr",
+    "font": "font.arabic"
+  }
+}

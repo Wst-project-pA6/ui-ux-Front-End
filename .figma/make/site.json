@@ -1,0 +1,10 @@
+{
+  "description": "Streamline your project management with intuitive tools designed to boost productivity and collaboration for teams of all sizes.",
+  "robots": {
+    "index": false
+  },
+  "accessibility": {
+    "addBypassLinks": false,
+    "ignoreReducedMotion": false
+  }
+}

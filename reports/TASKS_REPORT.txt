@@ -1,0 +1,192 @@
+==============================================================
+WST Project — Frontend (UI/UX) | Tasks Completion Report
+Project 6: Workshop Management & Student Practical Training
+==============================================================
+Date: 2026-09-21
+Scope: Bind WST_OpenAPI_Contract_FROZEN.yaml to the React frontend,
+       fix bugs/errors, align with the requirements brief (WST-FR-01..14).
+
+--------------------------------------------------------------
+PART 1 — API CONTRACT BINDING (new files)
+--------------------------------------------------------------
+1. src/api/config.ts
+   - Backend base URL via VITE_API_BASE_URL (default: http://localhost:3000/api/v1).
+   - Collection defaults: page=1, pageSize=20, max=100.
+
+2. src/api/types.ts
+   - Contract-first types: Money as decimal string (never float),
+     {items, page} collections, `version` concurrency, SCREAMING enums
+     (JobStage, JobPriority, ServiceType, RoleCode x10, InvoiceStatus...).
+
+3. src/api/http.ts
+   - fetch wrapper: Bearer JWT, Accept-Language: en|ar on every request,
+     Idempotency-Key support, single-flight 401 -> refresh -> retry once,
+     ApiError with contract code + requestId + Retry-After handling.
+
+4. src/api/auth.ts
+   - POST /auth/login, POST /auth/refresh, POST /auth/logout,
+     GET /auth/me, POST /auth/change-password.
+
+5. src/api/resources.ts
+   - One function per used operationId: customers, vehicles, job cards,
+     inventory, procurement, invoices, training, dashboards, exports, health.
+
+6. src/api/hooks.ts
+   - useApiList / useApiItem with loading / typed-error / empty /
+     offline-fallback states and real page-envelope pagination.
+
+7. src/api/mapping.ts
+   - UI <-> contract maps (stages, priorities, 10 RoleCodes -> 7 UI roles),
+     formatMoney/toMoney (decimal-string, ISO-4217), errorMessage(code).
+
+8. src/api/index.ts + src/api/README.md
+   - Public barrel + integration guide and adoption pattern for
+     remaining pages.
+
+9. src/context/AuthContext.tsx
+   - Live session via GET /auth/me; offline demo fallback ONLY when the
+     backend is unreachable (status 0). mustChangePassword supported.
+
+10. src/components/ui/ApiState.tsx
+    - LoadingRows, ApiErrorBanner (code + requestId + Retry-After),
+      EmptyState, DemoBadge.
+
+11. .env.example
+    - VITE_API_BASE_URL + VITE_API_DISABLED flag.
+
+--------------------------------------------------------------
+PART 2 — BUG FIXES (modified files)
+--------------------------------------------------------------
+12. src/App.tsx — wrapped router with AuthProvider.
+
+13. src/pages/Login.tsx — real JWT login via POST /auth/login
+    (401 INVALID_CREDENTIALS for unknown user and wrong password alike);
+    remembers email; honors mustChangePassword -> /settings.
+
+14. src/components/layout/AppShell.tsx — logout now calls
+    POST /auth/logout (refresh-family revocation, best-effort) then clears
+    local tokens. FIX: previously just navigated without revocation.
+
+15. src/pages/Customers.tsx — full rewrite, contract-bound:
+    server-side q search (debounced), status filter (ACTIVE/ARCHIVED),
+    real {items, page} pager, create via POST /customers with E.164 phone
+    normalization, typed error display. FIX: was 100% hardcoded mocks with
+    fake 1-2-3 pager and a non-functional save button.
+
+16. src/pages/JobCards.tsx —
+    a. Stage transitions via POST /job-cards/{id}/transitions with
+       expectedFromStage. FIX: stage was display-only / PATCH-able.
+    b. HARD RULE ENFORCED (brief "Hardest part", WST-FR-04/05): billable
+       work cannot start before customer approval. RECEIVED -> IN_PROGRESS
+       is blocked with 409 CUSTOMER_APPROVAL_REQUIRED (demo job
+       JC-2024-0909 is pending approval to demonstrate the block).
+    c. Invoice total DERIVED from labor lines (hours x rate) + part lines
+       (qty x unit). FIX: was hardcoded SAR 665 / 500 / 165 (WST-FR-09).
+
+17. src/pages/Dashboard.tsx — export via POST /exports (202) -> poll
+    GET /exports/{id} -> download authorization; client-side CSV kept as
+    offline fallback. FIX: was client-only blob export (WST-FR-13).
+
+18. src/pages/Settings.tsx — new Security tab bound to
+    POST /auth/change-password (closes the mustChangePassword loop).
+
+19. src/pages/SignUp.tsx + src/pages/ForgotPassword.tsx — labeled
+    demo-only with comments: the contract defines NO public sign-up and NO
+    reset endpoint (users come from POST /users by admins). FIX: they
+    previously pretended to be real backend flows.
+
+--------------------------------------------------------------
+PART 3 — VERIFICATION
+--------------------------------------------------------------
+20. npx tsc --noEmit — clean (0 errors).
+21. npm run build — success.
+22. npm run dev — host running, verified HTTP 200 at http://localhost:8443.
+
+--------------------------------------------------------------
+PART 4 — REQUIREMENTS COMPLIANCE CHECK (brief WST-FR-01..14)
+--------------------------------------------------------------
+- WST-FR-01 (auth/RBAC): live JWT + /auth/me roles/permissions; demo
+  fallback offline only. Row-scope/permission enforcement is backend-side
+  per contract; UI visibility is never treated as authorization.
+- WST-FR-02 (EN/AR + RTL): identifiers (job numbers, plates, VINs, SKUs,
+  amounts, phones) all render with dir="ltr" across pages — verified.
+- WST-FR-03/04/05: customers/vehicles/job-cards bound; unique server-side
+  jobNumber; invalid transitions rejected; approval gate enforced in UI
+  and by contract codes.
+- WST-FR-06/07/08: inventory/issue APIs + Idempotency-Key wired; negative
+  stock prevention and approval thresholds are backend rules surfaced via
+  INSUFFICIENT_STOCK / SCHEDULE_CONFLICT codes.
+- WST-FR-09: invoice derived from source lines (done in UI demo lines;
+  full totals come from GET invoice endpoints when backend is live).
+- WST-FR-10/11/12: training conflict flow, unsigned-assessment gating
+  (Issue button only for eligible), certificate Signing model preserved
+  from existing UI; live binding follows the same resources.ts pattern.
+- WST-FR-13: dashboards + async exports wired (Dashboard done as reference).
+- WST-FR-14: AI Insights page keeps advisory-only framing with human
+  override; rule baseline + non-AI fallback per brief.
+
+--------------------------------------------------------------
+REMAINING (suggested next steps)
+--------------------------------------------------------------
+- Bind Vehicles, Inventory, Purchasing, Training, Assessments,
+  InvoicesReports, Reports, AIInsights pages using the same
+  useApiList + resources.ts pattern (documented in src/api/README.md).
+- Add VITE_API_BASE_URL to deployment environment and run RBAC/RTL
+  acceptance tests against the live backend.
+--------------------------------------------------------------
+PART 5 — ROUND 2 FIXES (backend-pending hardening)
+--------------------------------------------------------------
+22. Dead save buttons wired (were closing modals without saving):
+    - Vehicles register -> POST /vehicles (409 on duplicate plate/VIN).
+    - Inventory add part -> POST /parts (SKU pattern enforced).
+    - Purchasing submit PO -> POST /purchase-orders (high-value 2-approval
+      rule derived locally: total > 5000 -> 2 approvals).
+    - Training schedule -> POST /training-sessions (409 SCHEDULE_CONFLICT
+      surfaced with explanation).
+    - MyJobs add labor -> POST /job-cards/{id}/labor-entries (rate
+      snapshotted; laborLogged updated locally offline).
+    - MyJobs issue part -> POST .../part-issues with Idempotency-Key
+      (INSUFFICIENT_STOCK can never go negative).
+    - JobCards create -> POST /job-cards (server-generated jobNumber,
+      stage RECEIVED, required fields 422).
+    - Assessments sign-off (row + detail) -> POST /assessments/{id}/sign-off.
+    - Competencies issue (row + detail) -> POST /certificates, idempotent.
+    All mutations: API-first; when the backend is unreachable (status 0)
+    they fall back to labeled local demo state (DemoBadge in each header)
+    instead of silently pretending. Typed contract errors display inline.
+23. organizationScopeId placeholder fixed: create payloads now use the real
+    scope from GET /auth/me (AuthContext.scopeId); zero UUID only pre-login.
+24. Settings Security tab fully localized (EN/AR keys added).
+25. New API clients: laborApi, assessmentsApi, certificatesApi,
+    inventoryApi.createPart, procurementApi.createOrder,
+    trainingApi.createSession.
+26. QR/public certificate verification intentionally NOT built: the brief
+    lists QR certificates as stretch; stretch must not delay the MVP.
+27. Verification: tsc clean, vite build success. Backend not yet delivered;
+    live paths will be re-tested once it is.
+--------------------------------------------------------------
+PART 6 — ROUND 3 (design-system export + training publish/edit)
+--------------------------------------------------------------
+28. Figma pack: NEW folder design-system/ with wst-design-tokens.json
+    (W3C DTCG: color/font/typography/spacing/radius/shadow + full
+    Button/Badge(16 variants)/Input/Card/Table/Modal specs + RTL rules)
+    and README.md (Tokens-Studio import in 5 min + native Variables
+    path). Honest note included: .fig is proprietary binary and cannot be
+    authored outside Figma — this is the standard importable equivalent.
+29. Design System page REMOVED from the site (route, nav item, role paths,
+    title key, both translation keys) after the export; tokens now live in
+    design-system/ on GitHub.
+30. Training Publish wired: POST /training-sessions/{id}/transitions
+    {toStatus: PUBLISHED}; conflicting sessions stay blocked AND guarded
+    in code (SCHEDULE_CONFLICT). Training Edit wired: edit modal +
+    PATCH with version (VERSION_CONFLICT surfaced).
+31. Invoices Export CSV button was dead (no onClick at all) -> wired to
+    POST /exports {exportType: INVOICES} with COMPLETED polling +
+    offline CSV fallback.
+32. REAL BUG FOUND via contract re-check: Dashboard export poller waited
+    for status 'READY', but the contract defines PENDING/PROCESSING/
+    COMPLETED/FAILED/EXPIRED — it would have polled forever. Fixed to
+    COMPLETED in Dashboard + Invoices.
+33. Verification: tsc clean, tokens JSON valid, vite build success.
+==============================================================
+End of report.
