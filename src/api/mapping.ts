@@ -95,6 +95,11 @@ export function errorMessage(code: string, fallback: string): string {
     case 'RATE_LIMITED': return 'Too many attempts — please wait and try again.'
     case 'FORBIDDEN': return 'You do not have permission for this action.'
     case 'NOT_FOUND': return 'Record not found (or outside your scope).'
+    case 'UNAUTHENTICATED': return 'Your session is not valid — please sign in again.'
+    case 'VALIDATION_FAILED': return 'Some details were rejected — please review the highlighted fields.'
+    case 'BAD_REQUEST': return 'The request was rejected — please check the entered details and retry.'
+    case 'INTERNAL_ERROR': return 'The server hit an unexpected problem — please try again in a moment.'
+    case 'SERVICE_UNAVAILABLE': return 'The server is temporarily unavailable — please try again in a moment.'
     default: return fallback
   }
 }

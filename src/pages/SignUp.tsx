@@ -14,6 +14,7 @@ import {
 } from '../utils/demoAuth'
 import { register } from '../api/auth'
 import { ApiError } from '../api/http'
+import { errorMessage } from '../api/mapping'
 
 const EyeIcon = ({ open }: { open: boolean }) =>
   open ? (
@@ -176,6 +177,10 @@ export default function SignUp() {
         navTimerRef.current = setTimeout(() => navigate(ROLE_CONFIGS[selectedRole].homeRoute), 1200)
       } else if (err instanceof ApiError && err.code === 'DUPLICATE_RESOURCE') {
         setEmailErr(t('auth.error.emailTaken'))
+      } else if (err instanceof ApiError) {
+        // Map backend codes to human text — never surface raw 5xx bodies
+        // (e.g. INTERNAL_ERROR "An unexpected error occurred") as-is.
+        setPwErr(errorMessage(err.code, err.message))
       } else {
         setPwErr(err instanceof Error ? err.message : t('auth.error.weakPassword'))
       }
