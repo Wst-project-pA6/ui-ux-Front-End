@@ -3,9 +3,18 @@
 // whitelist validation and rejects unknown paths, properties, filters, and sorts.
 import { api, newIdempotencyKey } from './http'
 import type {
+  Assessment,
+  Certificate,
+  ConflictCheckResponse,
+  CoverageResponse,
   Customer,
   CustomerCreateRequest,
   CustomerUpdateRequest,
+  DashboardResponse,
+  EligibilityResponse,
+  ExportFormat,
+  ExportJob,
+  ExportType,
   HealthStatus,
   Invoice,
   JobCard,
@@ -15,9 +24,13 @@ import type {
   ListQuery,
   Page,
   Part,
+  Prediction,
   PurchaseOrder,
+  ReportFilters,
+  SignOffDecision,
   StockBalance,
   TrainingSession,
+  TrainingSessionTransition,
   Vehicle,
   VehicleCreateRequest,
   VehicleUpdateRequest,
@@ -78,6 +91,14 @@ export interface Course {
 export interface Mentor {
   id: string
   displayName: string
+}
+
+export interface Student {
+  id: string
+  userId: string
+  studentNumber: string
+  displayName: string
+  status: 'ACTIVE' | 'INACTIVE'
 }
 
 export interface TrainingGroup {
@@ -368,8 +389,20 @@ export const trainingApi = {
     startsAt: string
     endsAt: string
   }) => api.post<TrainingSession>('/training-sessions', body),
-  // The implemented backend updates session details via PATCH. It does not
-  // expose a training-session status-transition endpoint.
+  // The backend supports DRAFT->PUBLISHED, PUBLISHED->COMPLETED and
+  // DRAFT/PUBLISHED->CANCELLED only. CANCELLED requires a reason.
+  // PUBLISHED with non-overridden bay/mentor overlap -> 409
+  // SCHEDULE_CONFLICT carrying the explainable conflicts[] list.
+  transitionSession: (sessionId: string, body: { toStatus: TrainingSessionTransition; reason?: string }) =>
+    api.post<TrainingSession>(`/training-sessions/${sessionId}/transitions`, body),
+  // Explainable pre-publish check: { hasConflicts, canPublish, conflicts[] }.
+  // A conflicting session can only be published after recording overrides
+  // for every overridable conflict (reason min 10 chars).
+  checkConflicts: (sessionId: string) =>
+    api.post<ConflictCheckResponse>(`/training-sessions/${sessionId}/conflict-check`),
+  createOverrides: (sessionId: string, body: { conflictKeys: string[]; reason: string }) =>
+    api.post<ConflictCheckResponse>(`/training-sessions/${sessionId}/conflict-overrides`, body),
+  // Updates require `version`; stale -> 409 VERSION_CONFLICT.
   updateSession: (sessionId: string, body: {
     version: number
     title?: string
@@ -379,7 +412,7 @@ export const trainingApi = {
     startsAt?: string
     endsAt?: string
   }) => api.patch<TrainingSession>(`/training-sessions/${sessionId}`, body),
-  students: (q?: ListQuery) => api.get('/students', q),
+  students: (q?: ListQuery) => api.get<Page<Student>>('/students', q),
   mentors: (q?: ListQuery) => api.get<Page<Mentor>>('/mentors', q),
   groups: (q?: ListQuery) => api.get<Page<TrainingGroup>>('/training-groups', q),
   terms: (q?: ListQuery) => api.get('/training-terms', q),
@@ -388,6 +421,91 @@ export const trainingApi = {
     api.post(`/training-groups/${groupId}/enrollments`, { studentId }),
   withdrawEnrollment: (enrollmentId: string, reason: string) =>
     api.patch(`/enrollments/${enrollmentId}`, { status: 'WITHDRAWN', reason }),
+  // Attendance is recorded in bulk per session (1-200 records, session must
+  // be PUBLISHED/COMPLETED, students actively enrolled).
+  recordAttendance: (sessionId: string, records: Array<{ studentId: string; status: 'PRESENT' | 'ABSENT' | 'LATE' | 'EXCUSED'; note?: string }>) =>
+    api.put(`/training-sessions/${sessionId}/attendance`, { records }),
+  attendanceRecords: (q?: ListQuery) => api.get('/attendance-records', q),
+  // Derived read models: coverage per competency + completion eligibility.
+  // Both require ?courseId=<uuid>.
+  coverage: (studentId: string, courseId: string) =>
+    api.get<CoverageResponse>(`/students/${studentId}/competency-coverage`, { courseId }),
+  eligibility: (studentId: string, courseId: string) =>
+    api.get<EligibilityResponse>(`/students/${studentId}/completion-eligibility`, { courseId }),
+}
+
+// ── Assessments ─────────────────────────────────────────────────────
+// Supervisor sign-off: POST /assessments/{id}/sign-off {decision}.
+// Signed-off rows are immutable (409 ASSESSMENT_LOCKED). Unsigned results
+// stay pending and cannot count toward certification.
+export const assessmentsApi = {
+  list: (q?: ListQuery) => api.get<Page<Assessment>>('/assessments', q),
+  create: (body: {
+    sessionId: string
+    studentId: string
+    taskId: string
+    result: 'PASS' | 'FAIL' | 'NEEDS_IMPROVEMENT'
+    timeOnTaskMinutes: number
+    mentorNote?: string
+    evidenceAttachmentIds?: string[]
+  }) => api.post<Assessment>('/assessments', body),
+  update: (assessmentId: string, body: {
+    version: number
+    result?: 'PASS' | 'FAIL' | 'NEEDS_IMPROVEMENT'
+    timeOnTaskMinutes?: number
+    mentorNote?: string
+    evidenceAttachmentIds?: string[]
+    changeReason: string
+  }) => api.patch<Assessment>(`/assessments/${assessmentId}`, body),
+  signOff: (assessmentId: string, body: { decision: SignOffDecision; note?: string }) =>
+    api.post<Assessment>(`/assessments/${assessmentId}/sign-off`, body),
+}
+
+// ── Certificates ────────────────────────────────────────────────────
+// Issuance requires full eligibility (else 422 CERTIFICATE_NOT_ELIGIBLE)
+// and is idempotent. verificationToken appears only on the issue response.
+export const certificatesApi = {
+  list: (q?: ListQuery) => api.get<Page<Certificate>>('/certificates', q),
+  get: (certificateId: string) => api.get<Certificate>(`/certificates/${certificateId}`),
+  issue: (body: { studentId: string; courseId: string }, key = newIdempotencyKey()) =>
+    api.post<Certificate>('/certificates', body, { idempotencyKey: key }),
+  revoke: (certificateId: string, reason: string) =>
+    api.post<Certificate>(`/certificates/${certificateId}/revocations`, { reason }),
+  verifyPublic: (verificationToken: string) =>
+    api.get(`/public/certificate-verifications/${verificationToken}`, undefined, { public: true }),
+}
+
+// ── Dashboards (role-scoped; 403 without the dashboard permission) ─────
+// Filters: from, to, organizationScopeId, storeId, bayId, technicianId,
+// courseId, termId. Values are DecimalStrings, never floats.
+export const dashboardsApi = {
+  workshop: (q?: ReportFilters) => api.get<DashboardResponse>('/dashboards/workshop', q),
+  inventoryFinance: (q?: ReportFilters) => api.get<DashboardResponse>('/dashboards/inventory-finance', q),
+  training: (q?: ReportFilters) => api.get<DashboardResponse>('/dashboards/training', q),
+  aiData: (q?: ReportFilters) => api.get<DashboardResponse>('/dashboards/ai-data', q),
+}
+
+// ── Exports (async: 202 -> poll -> download authorization) ─────────────
+// Create needs `exports.create`; polling/download need `exports.read`.
+// Terminal poll states: COMPLETED | FAILED | EXPIRED.
+export const exportsApi = {
+  list: (q?: ListQuery) => api.get<Page<ExportJob>>('/exports', q),
+  create: (body: { exportType: ExportType; format: ExportFormat; filters?: ReportFilters; customerId?: string; locale?: 'en' | 'ar' }) =>
+    api.post<ExportJob>('/exports', body),
+  get: (exportJobId: string) => api.get<ExportJob>(`/exports/${exportJobId}`),
+  authorizeDownload: (exportJobId: string) =>
+    api.post<{ url: string; expiresAt: string }>(`/exports/${exportJobId}/download-authorizations`),
+}
+
+// ── Predictions (always advisory; human decision required) ─────────────
+export const predictionsApi = {
+  list: (q?: ListQuery) => api.get<Page<Prediction>>('/predictions', q),
+  get: (predictionId: string) => api.get<Prediction>(`/predictions/${predictionId}`),
+  // ACCEPTED | OVERRIDDEN | DISMISSED. Override needs overrideReason (min 3).
+  decide: (predictionId: string, body: { decision: 'ACCEPTED' | 'OVERRIDDEN' | 'DISMISSED'; overrideReason?: string; overrideQuantity?: number; note?: string }) =>
+    api.post<Prediction>(`/predictions/${predictionId}/decisions`, body),
+  run: (body: { type: 'REORDER_SUGGESTION' | 'TRAINING_RISK'; storeId?: string; courseId?: string }) =>
+    api.post(`/prediction-runs`, body),
 }
 
 // ── Public system health ──────────────────────────────────────────────

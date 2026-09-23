@@ -13,6 +13,8 @@ export class ApiError extends Error {
   code: string
   requestId?: string
   details?: ApiErrorBody['details']
+  /** Present on 409 SCHEDULE_CONFLICT — the explainable conflict list. */
+  conflicts?: ApiErrorBody['conflicts']
   retryAfter?: number
 
   constructor(status: number, body: ApiErrorBody | string, retryAfter?: number) {
@@ -23,6 +25,7 @@ export class ApiError extends Error {
     this.code = typeof body === 'string' ? 'UNKNOWN' : body.code
     this.requestId = typeof body === 'string' ? undefined : body.requestId
     this.details = typeof body === 'string' ? undefined : body.details
+    this.conflicts = typeof body === 'string' ? undefined : body.conflicts
     this.retryAfter = retryAfter
   }
 

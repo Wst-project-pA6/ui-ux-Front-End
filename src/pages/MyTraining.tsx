@@ -2,6 +2,12 @@ import React, { useState } from 'react'
 import { Badge } from '../components/ui/Badge'
 import { PageHeader } from '../components/ui/PageHeader'
 import { useRole } from '../context/RoleContext'
+import { exportsApi, trainingApi } from '../api/resources'
+import type { Course } from '../api/resources'
+import type { CoverageResponse, EligibilityResponse } from '../api/types'
+import { ApiError } from '../api/http'
+import { errorMessage } from '../api/mapping'
+import { isUuid } from '../api/identity'
 import { DemoBadge } from '../components/ui/ApiState'
 import { useAuth } from '../context/AuthContext'
 
@@ -118,15 +124,81 @@ type Session = (typeof sessions)[0]
 
 export default function MyTraining() {
   const { config } = useRole()
-  const { mode } = useAuth()
+  const { mode, user } = useAuth()
   const [activeTab, setActiveTab] = useState<'sessions' | 'competencies' | 'certificate'>('sessions')
   const [selected, setSelected] = useState<Session | null>(null)
+  const [downloading, setDownloading] = useState(false)
   const [downloadError, setDownloadError] = useState('')
+  const [courseOptions, setCourseOptions] = useState<Course[]>([])
+  const [courseId, setCourseId] = useState('')
+  const [coverage, setCoverage] = useState<CoverageResponse | null>(null)
+  const [eligibility, setEligibility] = useState<EligibilityResponse | null>(null)
 
-  // Neither certificates nor export/download authorizations are implemented
-  // in the supplied backend. Do not offer a request that would always 404.
-  const handleDownloadCertificate = () => {
-    setDownloadError('Certificate issuance and PDF download are not available from the current backend.')
+  const studentUuid = user?.studentId && isUuid(user.studentId) ? user.studentId : null
+
+  // Live coverage + eligibility for the signed-in student. The backend
+  // derives both only from authoritative records (enrollments, attendance,
+  // signed-off results) — the demo preview stays when unavailable.
+  React.useEffect(() => {
+    if (!studentUuid) return
+    let cancelled = false
+    ;(async () => {
+      try {
+        const courses = await trainingApi.courses({ pageSize: 100 })
+        if (cancelled || courses.items.length === 0) return
+        if (!cancelled) {
+          setCourseOptions(courses.items)
+          setCourseId((prev) => prev || courses.items[0].id)
+        }
+      } catch { /* offline: demo preview stays */ }
+    })()
+    return () => { cancelled = true }
+  }, [studentUuid])
+
+  React.useEffect(() => {
+    if (!studentUuid || !isUuid(courseId)) return
+    let cancelled = false
+    ;(async () => {
+      const [cov, elig] = await Promise.allSettled([
+        trainingApi.coverage(studentUuid, courseId),
+        trainingApi.eligibility(studentUuid, courseId),
+      ])
+      if (cancelled) return
+      if (cov.status === 'fulfilled') setCoverage(cov.value)
+      if (elig.status === 'fulfilled') setEligibility(elig.value)
+    })()
+    return () => { cancelled = true }
+  }, [studentUuid, courseId])
+
+  // Certificate PDF comes from the exports pipeline (CERTIFICATES type):
+  // POST /exports (202) -> poll -> download authorization.
+  const handleDownloadCertificate = async () => {
+    setDownloading(true)
+    setDownloadError('')
+    try {
+      const job = await exportsApi.create({ exportType: 'CERTIFICATES', format: 'PDF' })
+      let status = job.status
+      for (let i = 0; i < 15 && status !== 'COMPLETED' && status !== 'FAILED' && status !== 'EXPIRED'; i++) {
+        await new Promise((r) => setTimeout(r, 800))
+        try {
+          status = (await exportsApi.get(job.id)).status
+        } catch { break }
+      }
+      if (status === 'COMPLETED') {
+        const auth = await exportsApi.authorizeDownload(job.id)
+        window.open(auth.url, '_blank', 'noopener')
+        return
+      }
+      throw new Error('export not ready')
+    } catch (e) {
+      if (e instanceof ApiError && e.status === 0) {
+        setDownloadError('Certificate download needs a backend connection — connect VITE_API_BASE_URL and retry.')
+      } else {
+        setDownloadError(e instanceof ApiError ? errorMessage(e.code, e.message) : 'Download failed')
+      }
+    } finally {
+      setDownloading(false)
+    }
   }
 
   const completedSessions = sessions.filter((s) => s.attendance !== 'pending').length
@@ -142,8 +214,20 @@ export default function MyTraining() {
     100
   )
 
-  const avgCompetency = Math.round(competencies.reduce((s, c) => s + c.coverage, 0) / competencies.length)
-  const certReady = competencies.every((c) => c.coverage >= 80)
+  const avgCompetency = coverage
+    ? Math.round(Number(coverage.overallPercent) || 0)
+    : Math.round(competencies.reduce((s, c) => s + c.coverage, 0) / competencies.length)
+  const certReady = eligibility ? eligibility.eligible : competencies.every((c) => c.coverage >= 80)
+  const comps = coverage
+    ? coverage.competencies.map((c) => {
+      const pct = Math.round(Number(c.coveragePercent) || 0)
+      return {
+        area: c.name.en,
+        coverage: pct,
+        status: (pct >= 80 ? 'ready' : pct >= 50 ? 'in-progress' : 'received') as 'ready' | 'in-progress' | 'received',
+      }
+    })
+    : competencies
 
   return (
     <div className="space-y-5">
@@ -249,10 +333,24 @@ export default function MyTraining() {
         <div className="bg-white border border-slate-200 rounded-xl p-5">
           <div className="flex items-center justify-between mb-4">
             <p className="text-sm font-semibold text-slate-900">Competency Coverage</p>
-            <span className="text-sm font-bold text-blue-600">{avgCompetency}% avg</span>
+            <div className="flex items-center gap-2">
+              {courseOptions.length > 0 && (
+                <select
+                  value={courseId}
+                  onChange={(e) => setCourseId(e.target.value)}
+                  className="h-8 px-2 border border-slate-200 rounded-lg text-xs text-slate-700 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  aria-label="Course"
+                >
+                  {courseOptions.map((c) => (
+                    <option key={c.id} value={c.id}>{c.name.en}</option>
+                  ))}
+                </select>
+              )}
+              <span className="text-sm font-bold text-blue-600">{avgCompetency}% avg</span>
+            </div>
           </div>
           <div className="flex flex-col gap-4">
-            {competencies.map((comp) => (
+            {comps.map((comp) => (
               <div key={comp.area}>
                 <div className="flex items-center justify-between mb-1">
                   <p className="text-sm font-medium text-slate-800">{comp.area}</p>
@@ -276,6 +374,13 @@ export default function MyTraining() {
             <div className="mt-4 p-3 bg-amber-50 border border-amber-100 rounded-lg">
               <p className="text-xs font-semibold text-amber-800">Certificate not yet available</p>
               <p className="text-xs text-amber-700 mt-0.5">All competency areas must reach ≥ 80% coverage with signed supervisor results.</p>
+              {eligibility && eligibility.unmetConditions.length > 0 && (
+                <ul className="mt-2 flex flex-col gap-1">
+                  {eligibility.unmetConditions.map((u) => (
+                    <li key={u.code} className="text-xs text-amber-700">· {u.message}</li>
+                  ))}
+                </ul>
+              )}
             </div>
           )}
         </div>
@@ -297,9 +402,10 @@ export default function MyTraining() {
               <p className="text-xs text-slate-400 mt-1">Issued: 20 Sep 2024</p>
               <button
                 onClick={handleDownloadCertificate}
+                disabled={downloading}
                 className="mt-4 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
               >
-                Download Certificate (PDF)
+                {downloading ? '…' : 'Download Certificate (PDF)'}
               </button>
               {downloadError && (
                 <p role="alert" className="mt-2 text-xs text-red-600">{downloadError}</p>

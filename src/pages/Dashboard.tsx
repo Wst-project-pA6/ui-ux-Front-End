@@ -4,6 +4,9 @@ import { KPICard } from '../components/ui/Card'
 import { Badge } from '../components/ui/Badge'
 import { PageHeader } from '../components/ui/PageHeader'
 import { useLang } from '../i18n/LanguageContext'
+import { dashboardsApi, exportsApi, jobsApi } from '../api/resources'
+import { ApiError } from '../api/http'
+import { STAGE_TO_UI } from '../api/mapping'
 
 function useExportToast() {
   const [visible, setVisible] = useState(false)
@@ -45,21 +48,94 @@ export default function Dashboard() {
   const navigate = useNavigate()
   const { t } = useLang()
   const exportToast = useExportToast()
+  const [pipeline, setPipeline] = useState(pipelineStages)
+  const [jobs, setJobs] = useState(recentJobs)
+  const [kpis, setKpis] = useState({ active: '52', ready: '9', lowStock: '7', training: '3' })
+  const [exporting, setExporting] = useState(false)
 
-  // No export controller exists in the backend. This intentionally exports
-  // only the visible dashboard preview instead of calling a non-existent API.
-  const handleExport = () => {
-    const header = 'ID,Customer,Vehicle,Technician,Status,Priority,Due'
-    const rows = recentJobs.map((j) => `${j.id},${j.customer},${j.vehicle},${j.tech},${j.status},${j.priority},${j.due}`)
-    const csv = [header, ...rows].join('\n')
-    const blob = new Blob([csv], { type: 'text/csv' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = 'dashboard-jobs.csv'
-    a.click()
-    URL.revokeObjectURL(url)
-    exportToast.trigger()
+  // Live workshop metrics (JOBS_BY_STAGE breakdown) + latest job cards.
+  // Falls back to the preview data when offline or unauthorized.
+  React.useEffect(() => {
+    let cancelled = false
+    ;(async () => {
+      try {
+        const [dash, jobPage, finance] = await Promise.all([
+          dashboardsApi.workshop(),
+          jobsApi.list({ pageSize: 5, sort: '-createdAt' }),
+          dashboardsApi.inventoryFinance().catch(() => null),
+        ])
+        if (cancelled) return
+        const byStage = dash.metrics.find((m) => m.key === 'JOBS_BY_STAGE')
+        if (byStage?.breakdown) {
+          const counts = new Map(byStage.breakdown.map((b) => [b.key, Number(b.value) || 0]))
+          const stageOf = (variant: string) =>
+            variant === 'received' ? 'RECEIVED' : variant === 'in-progress' ? 'IN_PROGRESS'
+            : variant === 'quality-check' ? 'QUALITY_CHECK' : variant === 'ready' ? 'READY' : 'DELIVERED'
+          setPipeline((prev) => prev.map((p) => ({ ...p, count: counts.get(stageOf(p.variant)) ?? p.count })))
+          const active = ['RECEIVED', 'IN_PROGRESS', 'QUALITY_CHECK'].reduce((s, k) => s + (counts.get(k) ?? 0), 0)
+          const ready = counts.get('READY') ?? 0
+          const stockouts = finance?.metrics.find((m) => m.key === 'STOCKOUTS')
+          setKpis((prev) => ({
+            ...prev,
+            active: String(active),
+            ready: String(ready),
+            lowStock: stockouts ? String(Number(stockouts.value) || 0) : prev.lowStock,
+          }))
+        }
+        const priorityLabel = (p: string) =>
+          p === 'HIGH' ? 'High' : p === 'LOW' ? 'Low' : p === 'URGENT' ? 'Urgent' : 'Normal'
+        setJobs(jobPage.items.map((j) => ({
+          id: j.jobNumber,
+          customer: j.customerDisplayName ?? j.customerId.slice(0, 8),
+          vehicle: j.vehiclePlate ?? j.vehicleId.slice(0, 8),
+          tech: j.technicianId ? j.technicianId.slice(0, 8) : 'Unassigned',
+          status: STAGE_TO_UI[j.stage] as (typeof recentJobs)[number]['status'],
+          priority: priorityLabel(j.priority),
+          due: new Date(j.expectedCompletionAt).toLocaleDateString(),
+        })))
+      } catch {
+        // Offline / unauthorized: keep the preview data.
+      }
+    })()
+    return () => { cancelled = true }
+  }, [])
+
+  // Contract export flow: POST /exports (202) -> poll -> download
+  // authorization -> open file. Offline: client-side CSV of visible rows.
+  const handleExport = async () => {
+    setExporting(true)
+    try {
+      const job = await exportsApi.create({ exportType: 'JOBS', format: 'CSV' })
+      let status = job.status
+      for (let i = 0; i < 15 && status !== 'COMPLETED' && status !== 'FAILED' && status !== 'EXPIRED'; i++) {
+        await new Promise((r) => setTimeout(r, 800))
+        try {
+          status = (await exportsApi.get(job.id)).status
+        } catch { break }
+      }
+      if (status === 'COMPLETED') {
+        const auth = await exportsApi.authorizeDownload(job.id)
+        window.open(auth.url, '_blank', 'noopener')
+        exportToast.trigger()
+        return
+      }
+      throw new Error('export not ready')
+    } catch (e) {
+      if (e instanceof ApiError && e.status !== 0) return
+      const header = 'ID,Customer,Vehicle,Technician,Status,Priority,Due'
+      const rows = jobs.map((j) => `${j.id},${j.customer},${j.vehicle},${j.tech},${j.status},${j.priority},${j.due}`)
+      const csv = [header, ...rows].join('\n')
+      const blob = new Blob([csv], { type: 'text/csv' })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = 'dashboard-jobs.csv'
+      a.click()
+      URL.revokeObjectURL(url)
+      exportToast.trigger()
+    } finally {
+      setExporting(false)
+    }
   }
 
   const alerts = [
@@ -92,8 +168,9 @@ export default function Dashboard() {
         actions={
           <button
             onClick={handleExport}
-            className="flex items-center gap-2 px-3 py-2 border border-slate-200 rounded-lg text-sm text-slate-600 hover:bg-slate-50 transition-colors"
-            title="Exports the visible dashboard preview; server-side exports are not implemented."
+            disabled={exporting}
+            className="flex items-center gap-2 px-3 py-2 border border-slate-200 rounded-lg text-sm text-slate-600 hover:bg-slate-50 transition-colors disabled:opacity-50"
+            title="Server export (JOBS CSV) with offline fallback to the visible rows."
           >
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75">
               <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
@@ -109,7 +186,7 @@ export default function Dashboard() {
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
         <KPICard
           title={t('dashboard.kpi.activeJobs')}
-          value="52"
+          value={kpis.active}
           change={t('dashboard.kpi.activeJobsChange')}
           changeType="neutral"
           subtitle={t('dashboard.kpi.activeJobsSub')}
@@ -123,7 +200,7 @@ export default function Dashboard() {
         />
         <KPICard
           title={t('dashboard.kpi.readyDelivery')}
-          value="9"
+          value={kpis.ready}
           change={t('dashboard.kpi.readyDeliveryChange')}
           changeType="positive"
           iconBg="bg-green-50"
@@ -135,7 +212,7 @@ export default function Dashboard() {
         />
         <KPICard
           title={t('dashboard.kpi.lowStock')}
-          value="7"
+          value={kpis.lowStock}
           change={t('dashboard.kpi.lowStockChange')}
           changeType="negative"
           iconBg="bg-red-50"
@@ -149,7 +226,7 @@ export default function Dashboard() {
         />
         <KPICard
           title={t('dashboard.kpi.trainingSessions')}
-          value="3"
+          value={kpis.training}
           change={t('dashboard.kpi.trainingSessionsChange')}
           changeType="neutral"
           iconBg="bg-purple-50"
@@ -168,7 +245,7 @@ export default function Dashboard() {
         <div className="xl:col-span-2 bg-white border border-slate-200 rounded-xl p-4 md:p-6">
           <h2 className="text-base font-semibold text-slate-900 mb-4">{t('dashboard.pipeline.title')}</h2>
           <div className="flex gap-2 md:gap-3 overflow-x-auto pb-2">
-            {pipelineStages.map((stage) => (
+            {pipeline.map((stage) => (
               <button
                 key={stage.variant}
                 type="button"
@@ -185,8 +262,8 @@ export default function Dashboard() {
           {/* Total bar */}
           <div className="mt-4">
             <div className="flex rounded-full overflow-hidden h-2">
-              {pipelineStages.map((stage, i) => {
-                const total = pipelineStages.reduce((s, x) => s + x.count, 0)
+              {pipeline.map((stage, i) => {
+                const total = pipeline.reduce((s, x) => s + x.count, 0)
                 return (
                   <div
                     key={i}
@@ -197,7 +274,7 @@ export default function Dashboard() {
               })}
             </div>
             <p className="text-xs text-slate-400 mt-2">
-              {t('dashboard.pipeline.total')}: {pipelineStages.reduce((s, x) => s + x.count, 0)} {t('dashboard.pipeline.jobs')}
+              {t('dashboard.pipeline.total')}: {pipeline.reduce((s, x) => s + x.count, 0)} {t('dashboard.pipeline.jobs')}
             </p>
           </div>
         </div>
@@ -252,7 +329,7 @@ export default function Dashboard() {
           </div>
           {/* Mobile: card list */}
           <div className="md:hidden divide-y divide-slate-50">
-            {recentJobs.map((job) => (
+            {jobs.map((job) => (
               <button
                 key={job.id}
                 type="button"
@@ -295,7 +372,7 @@ export default function Dashboard() {
                 </tr>
               </thead>
               <tbody>
-                {recentJobs.map((job) => (
+                {jobs.map((job) => (
                   <tr
                     key={job.id}
                     role="button"

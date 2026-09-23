@@ -22,7 +22,7 @@ unknown paths, properties, filters, and sorts.
 | `types.ts` | Backend shapes: Money as decimal string, `{items, page}` collections, `version` concurrency, SCREAMING enums |
 | `http.ts` | fetch wrapper: Bearer JWT, `Accept-Language: en\|ar`, `Idempotency-Key`, single-flight 401→refresh→retry, `ApiError` with `code` + `requestId` + `Retry-After` |
 | `auth.ts` | `POST /auth/login`, `POST /auth/register`, `POST /auth/refresh`, `POST /auth/logout`, `POST /auth/change-password`, `GET /auth/me` |
-| `resources.ts` | One client per implemented controller (customers, vehicles, jobs, approvals, inventory, labor, quality, purchasing, access/users, invoices, bays, training, health) |
+| `resources.ts` | One client per implemented controller (customers, vehicles, jobs, approvals, inventory, labor, quality, purchasing, access/users, invoices, bays, training, assessments, certificates, dashboards, exports, predictions, health) |
 | `hooks.ts` | `useApiList` / `useApiItem` with loading / typed-error / empty / offline-fallback states |
 | `mapping.ts` | UI↔backend maps (stages, priorities, 10 RoleCodes→7 UI roles), `formatMoney`/`toMoney`, `errorMessage(code)` |
 | `identity.ts` | `isUuid()` guard for routes protected by `ParseUUIDPipe` |
@@ -32,12 +32,15 @@ unknown paths, properties, filters, and sorts.
 
 - **Auth**: 401 `INVALID_CREDENTIALS` for unknown user and wrong password alike; rotating refresh tokens; `mustChangePassword` → `/settings` Security tab. Registration (`POST /auth/register`) creates a pending-access account and never signs in.
 - **Users**: backend identifies users by UUID, never email. Admin edits use `PATCH /users/{id}`, role changes use `PUT /users/{id}/roles`.
-- **Stages/status**: never `PATCH`ed — job cards use `POST /job-cards/{id}/transitions` with `expectedFromStage`. Training sessions have no status-transition endpoint in this backend.
+- **Stages/status**: never `PATCH`ed — job cards use `POST /job-cards/{id}/transitions` with `expectedFromStage`; training sessions use `POST /training-sessions/{id}/transitions` (`DRAFT→PUBLISHED→COMPLETED`, `→CANCELLED` with reason). Publish with unresolved conflicts → `409 SCHEDULE_CONFLICT` with `conflicts[]`; overrides via `POST .../conflict-overrides` (reason ≥ 10 chars).
 - **Concurrency**: updates send `version`; stale → `409 VERSION_CONFLICT` ("refresh and retry").
 - **Money**: `{amount: decimal-string, currency: ISO-4217}` — never floats.
 - **Collections**: `page/pageSize/sort` + `{items, page}`; unknown filters/sorts → 400 (only documented params are sent).
 - **Idempotency**: `Idempotency-Key` on part-issue, part-issue reversal, part-reservation, stock-adjustment, goods-receipt, and invoice-payment POSTs.
-- **Not implemented here**: dashboards, async exports/download authorizations, assessments, and certificates. Those screens stay read-only and never call missing routes.
+- **Not implemented here**: purchase-approval-policy and prediction-settings config screens, attachment upload/download, audit-event reads, public certificate verification page, and training master-data (competencies/practical-tasks) management. Those areas stay read-only and never call missing routes.
+- **Dashboards**: `GET /dashboards/{workshop,inventory-finance,training,ai-data}` return `{dashboard, generatedAt, metrics[]}` with DecimalString values; filters are `from/to/organizationScopeId/storeId/bayId/technicianId/courseId/termId` only.
+- **Exports**: `POST /exports` (202, needs `exports.create`) → poll `GET /exports/{id}` (`PENDING/PROCESSING→COMPLETED/FAILED/EXPIRED`) → `POST .../download-authorizations` → open URL.
+- **Assessments/certificates**: sign-off `{decision}` (signed-off rows immutable → 409); issuance needs full eligibility (422 otherwise) and is idempotent; revocation needs a reason.
 - **Errors**: `ApiError.code` drives messages (`SCHEDULE_CONFLICT`, `INSUFFICIENT_STOCK`, `VERSION_CONFLICT`, `RATE_LIMITED`+`Retry-After`…); 404 also means "outside your scope".
 - **Logout**: `POST /auth/logout` revokes the refresh family (best-effort), then clears local tokens.
 - **Vehicles**: updates accept only `plate`, `mileage` (must increase), and `status`. VIN is required on create and must match `^[A-HJ-NPR-Z0-9]{17}$`.

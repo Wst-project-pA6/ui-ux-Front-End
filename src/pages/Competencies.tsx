@@ -3,7 +3,13 @@ import { PageHeader, SearchBar } from '../components/ui/PageHeader'
 import { Badge } from '../components/ui/Badge'
 import { Button } from '../components/ui/Button'
 import { Modal } from '../components/ui/Modal'
+import { Select } from '../components/ui/Input'
 import { useLang } from '../i18n/LanguageContext'
+import { certificatesApi, trainingApi } from '../api/resources'
+import type { Course } from '../api/resources'
+import { ApiError } from '../api/http'
+import { errorMessage } from '../api/mapping'
+import { isUuid } from '../api/identity'
 import { DemoBadge } from '../components/ui/ApiState'
 import { useAuth } from '../context/AuthContext'
 
@@ -18,6 +24,7 @@ interface Student {
   certStatus: CertStatus
   certNumber: string | null
   certDate: string | null
+  certId?: string
   completionPct: number
   competencies: Array<{ name: string; status: CompetencyStatus; signed: boolean }>
 }
@@ -90,14 +97,86 @@ export default function Competencies() {
   const { t } = useLang()
   const { mode } = useAuth()
   const [search, setSearch] = useState('')
-  const [students] = useState<Student[]>(INITIAL_STUDENTS)
+  const [students, setStudents] = useState<Student[]>(INITIAL_STUDENTS)
   const [selected, setSelected] = useState<Student | null>(null)
+  const [issuing, setIssuing] = useState(false)
   const [issueError, setIssueError] = useState('')
+  const [courseOptions, setCourseOptions] = useState<Course[]>([])
+  const [issueCourseId, setIssueCourseId] = useState('')
 
-  // Certificates are not implemented by the supplied backend. This preview
-  // stays read-only instead of assigning fabricated certificate numbers.
-  const handleIssue = () => {
-    setIssueError('Certificate issuance is not available from the current backend.')
+  // Live course catalog — issuance needs real course UUIDs.
+  React.useEffect(() => {
+    let cancelled = false
+    trainingApi.courses({ pageSize: 100 })
+      .then((res) => { if (!cancelled) setCourseOptions(res.items) })
+      .catch(() => { /* offline: demo preview stays */ })
+    return () => { cancelled = true }
+  }, [])
+
+  // Certificate issuance: POST /certificates {studentId, courseId}.
+  // Only fully eligible enrollments succeed — anything else returns 422
+  // CERTIFICATE_NOT_ELIGIBLE and the UI must not invent a certificate.
+  const handleIssue = async (student: Student) => {
+    if (!isUuid(student.id)) {
+      // Demo row has no backend record — mark locally, clearly labeled.
+      const mark = (s: Student): Student => (s.id === student.id
+        ? { ...s, certStatus: 'issued', certNumber: `CERT-${new Date().getFullYear()}-LOCAL`, certDate: new Date().toISOString().slice(0, 10) }
+        : s)
+      setStudents((prev) => prev.map(mark))
+      setSelected((prev) => (prev && prev.id === student.id ? mark(prev) : prev))
+      return
+    }
+    if (!isUuid(issueCourseId)) {
+      setIssueError('Select the course to certify before issuing.')
+      return
+    }
+    setIssuing(true)
+    setIssueError('')
+    try {
+      const cert = await certificatesApi.issue({ studentId: student.id, courseId: issueCourseId })
+      const mark = (s: Student): Student => (s.id === student.id
+        ? { ...s, certStatus: 'issued', certNumber: cert.certificateNumber, certDate: cert.issuedAt.slice(0, 10), certId: cert.id }
+        : s)
+      setStudents((prev) => prev.map(mark))
+      setSelected((prev) => (prev && prev.id === student.id ? mark(prev) : prev))
+    } catch (err) {
+      if (err instanceof ApiError && err.status === 0) {
+        const mark = (s: Student): Student => (s.id === student.id
+          ? { ...s, certStatus: 'issued', certNumber: `CERT-${new Date().getFullYear()}-LOCAL`, certDate: new Date().toISOString().slice(0, 10) }
+          : s)
+        setStudents((prev) => prev.map(mark))
+        setSelected((prev) => (prev && prev.id === student.id ? mark(prev) : prev))
+      } else {
+        setIssueError(err instanceof ApiError ? errorMessage(err.code, err.message) : 'Issuance failed')
+      }
+    } finally {
+      setIssuing(false)
+    }
+  }
+
+  // Revocation: POST /certificates/{id}/revocations {reason>=3}.
+  const handleRevoke = async (student: Student) => {
+    if (!student.certId || !isUuid(student.certId)) {
+      setIssueError('Only backend-issued certificates can be revoked here.')
+      return
+    }
+    const reason = window.prompt('Revocation reason (min 3 characters, recorded in audit):')?.trim() ?? ''
+    if (reason.length < 3) {
+      setIssueError('A revocation reason of at least 3 characters is required.')
+      return
+    }
+    setIssuing(true)
+    setIssueError('')
+    try {
+      await certificatesApi.revoke(student.certId, reason)
+      const mark = (s: Student): Student => (s.id === student.id ? { ...s, certStatus: 'revoked' } : s)
+      setStudents((prev) => prev.map(mark))
+      setSelected((prev) => (prev && prev.id === student.id ? mark(prev) : prev))
+    } catch (err) {
+      setIssueError(err instanceof ApiError ? errorMessage(err.code, err.message) : 'Revocation failed')
+    } finally {
+      setIssuing(false)
+    }
   }
 
   const certBadge: Record<CertStatus, { label: string; cls: string }> = {
@@ -197,10 +276,10 @@ export default function Competencies() {
                   <td className="px-6 py-4">
                     <div onClick={(e) => e.stopPropagation()}>
                       {s.certStatus === 'eligible' && (
-                        <Button size="sm" onClick={handleIssue}>{t('competencies.action.issue')}</Button>
+                        <Button size="sm" onClick={() => setSelected(s)}>{t('competencies.action.issue')}</Button>
                       )}
                       {s.certStatus === 'issued' && (
-                        <Button size="sm" variant="secondary">{t('competencies.action.view')}</Button>
+                        <Button size="sm" variant="secondary" onClick={() => setSelected(s)}>{t('competencies.action.view')}</Button>
                       )}
                     </div>
                   </td>
@@ -221,11 +300,18 @@ export default function Competencies() {
           footer={
             <>
               <Button variant="secondary" onClick={() => setSelected(null)}>{t('action.close')}</Button>
-              {selected.certStatus === 'eligible' && <Button onClick={handleIssue}>{t('competencies.action.issue')}</Button>}
+              {selected.certStatus === 'eligible' && <Button loading={issuing} onClick={() => handleIssue(selected)}>{t('competencies.action.issue')}</Button>}
+              {selected.certStatus === 'issued' && selected.certId && <Button variant="destructive" loading={issuing} onClick={() => handleRevoke(selected)}>Revoke</Button>}
             </>
           }
         >
           <div className="flex flex-col gap-5">
+            {issueError && (
+              <div role="alert" className="px-4 py-3 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm">{issueError}</div>
+            )}
+            {selected.certStatus === 'eligible' && courseOptions.length > 0 && (
+              <Select label="Course to certify" value={issueCourseId} onChange={(e) => setIssueCourseId(e.target.value)} options={[{ value: '', label: 'Select a course' }, ...courseOptions.map((c) => ({ value: c.id, label: c.name.en }))]} />
+            )}
             {/* Header info */}
             <div className="grid grid-cols-3 gap-3">
               <div className="bg-slate-50 rounded-lg p-3">

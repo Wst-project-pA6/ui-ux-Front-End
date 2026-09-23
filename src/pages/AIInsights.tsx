@@ -2,6 +2,10 @@ import React, { useState } from 'react'
 import { PageHeader } from '../components/ui/PageHeader'
 import { Button } from '../components/ui/Button'
 import { useLang } from '../i18n/LanguageContext'
+import { predictionsApi } from '../api/resources'
+import { ApiError } from '../api/http'
+import { errorMessage } from '../api/mapping'
+import { isUuid } from '../api/identity'
 
 type ConfidenceLevel = 'high' | 'medium' | 'low'
 type InsightCategory = 'parts-demand' | 'training-risk'
@@ -17,9 +21,10 @@ interface Insight {
   dataAvailability: string
   recommendation: string
   overridden: boolean
+  decidedStatus?: string
 }
 
-const insights: Insight[] = [
+const DEMO_INSIGHTS: Insight[] = [
   {
     id: 'INS-001',
     category: 'parts-demand',
@@ -72,8 +77,94 @@ const insights: Insight[] = [
 
 export default function AIInsights() {
   const { t } = useLang()
+  const [insights, setInsights] = useState<Insight[]>(DEMO_INSIGHTS)
   const [overrides, setOverrides] = useState<Record<string, boolean>>({})
   const [activeCategory, setActiveCategory] = useState<InsightCategory | 'all'>('all')
+  const [decidingId, setDecidingId] = useState<string | null>(null)
+  const [running, setRunning] = useState(false)
+  const [actionError, setActionError] = useState('')
+
+  // Live predictions (always advisory — every decision needs a human).
+  // Offline: the preview insights stay in place.
+  const load = React.useCallback(async () => {
+    try {
+      const res = await predictionsApi.list({ pageSize: 100, sort: '-generatedAt' })
+      setInsights(res.items.map((p) => {
+        const reorder = p.type === 'REORDER_SUGGESTION'
+        const factors = p.explanation.factors.map((f) => f.message).join(' ')
+        return {
+          id: p.id,
+          category: (reorder ? 'parts-demand' : 'training-risk') as InsightCategory,
+          title: reorder
+            ? `Reorder suggestion — ${p.reorder?.input.partSku ?? p.id.slice(0, 8)}`
+            : `Training risk — ${p.trainingRisk?.result.riskLevel ?? ''} ${p.trainingRisk ? p.trainingRisk.input.studentId.slice(0, 8) : ''}`.trim(),
+          prediction: p.explanation.summary,
+          reason: factors || p.explanation.summary,
+          baseline: reorder && p.reorder
+            ? `On hand ${p.reorder.input.onHand} · reserved ${p.reorder.input.reserved} · available ${p.reorder.input.available} · min ${p.reorder.input.minLevel} · max ${p.reorder.input.maxLevel} · suggested ${p.reorder.result.suggestedQuantity}`
+            : p.trainingRisk
+              ? `Attendance ${p.trainingRisk.input.attendancePercent}% · missing sessions ${p.trainingRisk.input.missingAttendanceSessions} · unsigned assessments ${p.trainingRisk.input.unsignedAssessmentCount} · unmet competencies ${p.trainingRisk.input.unmetCompetencyCount}`
+              : '—',
+          confidence: (p.source.kind === 'ML_MODEL' ? 'high' : 'medium') as ConfidenceLevel,
+          dataAvailability: `Source: ${p.source.name} v${p.source.version} · generated ${new Date(p.generatedAt).toLocaleDateString()}`,
+          recommendation: reorder && p.reorder
+            ? `Suggested reorder quantity: ${p.reorder.result.suggestedQuantity}`
+            : p.trainingRisk ? p.trainingRisk.result.flags.join('; ') || 'Monitor progress.' : '',
+          overridden: p.status === 'OVERRIDDEN' || p.status === 'DISMISSED',
+          decidedStatus: p.status === 'ACTIVE' ? undefined : p.status,
+        }
+      }))
+    } catch {
+      // Offline / unauthorized: keep the preview insights.
+    }
+  }, [])
+
+  React.useEffect(() => { void load() }, [load])
+
+  // Human decision: ACCEPTED | OVERRIDDEN | DISMISSED. Overrides record a
+  // reason (min 3 chars). Decisions are final server-side.
+  const decide = async (insight: Insight, decision: 'ACCEPTED' | 'OVERRIDDEN' | 'DISMISSED') => {
+    if (!isUuid(insight.id)) {
+      setOverrides((prev) => ({ ...prev, [insight.id]: !prev[insight.id] }))
+      return
+    }
+    let overrideReason: string | undefined
+    if (decision === 'OVERRIDDEN') {
+      overrideReason = window.prompt('Override reason (min 3 characters, recorded in audit):')?.trim() ?? ''
+      if (overrideReason.length < 3) {
+        setActionError('An override reason of at least 3 characters is required.')
+        return
+      }
+    }
+    setDecidingId(insight.id)
+    setActionError('')
+    try {
+      const updated = await predictionsApi.decide(insight.id, { decision, overrideReason })
+      setInsights((prev) => prev.map((x) => (x.id === insight.id
+        ? { ...x, overridden: true, decidedStatus: updated.status }
+        : x)))
+    } catch (err) {
+      setActionError(err instanceof ApiError ? errorMessage(err.code, err.message) : 'Decision failed')
+    } finally {
+      setDecidingId(null)
+    }
+  }
+
+  // Generate a fresh prediction run for both types (unscoped), then reload.
+  const runAll = async () => {
+    setRunning(true)
+    setActionError('')
+    try {
+      for (const type of ['REORDER_SUGGESTION', 'TRAINING_RISK'] as const) {
+        await predictionsApi.run({ type })
+      }
+      await load()
+    } catch (err) {
+      setActionError(err instanceof ApiError ? errorMessage(err.code, err.message) : 'Prediction run failed')
+    } finally {
+      setRunning(false)
+    }
+  }
 
   const confidenceStyle: Record<ConfidenceLevel, { label: string; cls: string }> = {
     high: { label: t('ai.confidence.high'), cls: 'bg-green-50 text-green-700 border border-green-200' },
@@ -91,8 +182,6 @@ export default function AIInsights() {
     'training-risk': 'bg-purple-50 text-purple-700',
   }
 
-  const toggle = (id: string) => setOverrides((prev) => ({ ...prev, [id]: !prev[id] }))
-
   const filtered = insights.filter(
     (i) => activeCategory === 'all' || i.category === activeCategory
   )
@@ -102,7 +191,15 @@ export default function AIInsights() {
       <PageHeader
         title={t('ai.title')}
         subtitle={t('ai.subtitle')}
+        actions={
+          <Button variant="secondary" size="sm" loading={running} onClick={runAll}>
+            Generate new predictions
+          </Button>
+        }
       />
+      {actionError && (
+        <div role="alert" className="px-4 py-3 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm">{actionError}</div>
+      )}
 
       {/* Disclaimer Banner */}
       <div className="bg-slate-900 text-white rounded-xl p-5 flex items-start gap-4">
@@ -133,7 +230,8 @@ export default function AIInsights() {
       {/* Insights */}
       <div className="flex flex-col gap-4">
         {filtered.map((insight) => {
-          const isOverridden = overrides[insight.id]
+          const isOverridden = insight.decidedStatus ? true : !!overrides[insight.id]
+          const isLive = isUuid(insight.id)
           return (
             <div
               key={insight.id}
@@ -150,22 +248,52 @@ export default function AIInsights() {
                     </span>
                     {isOverridden && (
                       <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-slate-100 text-slate-500">
-                        {t('ai.overrideApplied')}
+                        {insight.decidedStatus ?? t('ai.overrideApplied')}
                       </span>
                     )}
                   </div>
                   <h3 className="text-base font-semibold text-slate-900 mt-2">{insight.title}</h3>
                 </div>
-                <button
-                  onClick={() => toggle(insight.id)}
-                  className={`text-xs font-medium px-3 py-1.5 rounded-lg border transition-colors shrink-0 ${
-                    isOverridden
-                      ? 'border-slate-200 text-slate-500 hover:bg-slate-50'
-                      : 'border-amber-200 text-amber-700 bg-amber-50 hover:bg-amber-100'
-                  }`}
-                >
-                  {isOverridden ? t('action.removeOverride') : t('action.applyOverride')}
-                </button>
+                <div className="flex gap-2 shrink-0">
+                  {!insight.decidedStatus && (
+                    isLive ? (
+                      <>
+                        <button
+                          onClick={() => decide(insight, 'ACCEPTED')}
+                          disabled={decidingId === insight.id}
+                          className="text-xs font-medium px-3 py-1.5 rounded-lg border border-blue-200 text-blue-700 bg-blue-50 hover:bg-blue-100 transition-colors disabled:opacity-50"
+                        >
+                          Accept
+                        </button>
+                        <button
+                          onClick={() => decide(insight, 'OVERRIDDEN')}
+                          disabled={decidingId === insight.id}
+                          className="text-xs font-medium px-3 py-1.5 rounded-lg border border-amber-200 text-amber-700 bg-amber-50 hover:bg-amber-100 transition-colors disabled:opacity-50"
+                        >
+                          {t('action.applyOverride')}
+                        </button>
+                        <button
+                          onClick={() => decide(insight, 'DISMISSED')}
+                          disabled={decidingId === insight.id}
+                          className="text-xs font-medium px-3 py-1.5 rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-50 transition-colors disabled:opacity-50"
+                        >
+                          Dismiss
+                        </button>
+                      </>
+                    ) : (
+                      <button
+                        onClick={() => decide(insight, 'OVERRIDDEN')}
+                        className={`text-xs font-medium px-3 py-1.5 rounded-lg border transition-colors ${
+                          isOverridden
+                            ? 'border-slate-200 text-slate-500 hover:bg-slate-50'
+                            : 'border-amber-200 text-amber-700 bg-amber-50 hover:bg-amber-100'
+                        }`}
+                      >
+                        {isOverridden ? t('action.removeOverride') : t('action.applyOverride')}
+                      </button>
+                    )
+                  )}
+                </div>
               </div>
 
               <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">

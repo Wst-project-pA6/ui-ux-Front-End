@@ -7,6 +7,7 @@ import { Input, Select } from '../components/ui/Input'
 import { useLang } from '../i18n/LanguageContext'
 import { trainingApi, baysApi } from '../api/resources'
 import { ApiError } from '../api/http'
+import type { TrainingConflict } from '../api/types'
 import { isUuid } from '../api/identity'
 import { DemoBadge } from '../components/ui/ApiState'
 import { useAuth } from '../context/AuthContext'
@@ -106,9 +107,80 @@ export default function Training() {
   const [editing, setEditing] = useState<DemoSession | null>(null)
   const [editError, setEditError] = useState('')
   const [actionError, setActionError] = useState('')
-  // The implemented backend has create/read/update session routes only. It
-  // does not expose a publish/status-transition operation, so this screen
-  // deliberately does not manufacture a successful publish action.
+  const [publishingId, setPublishingId] = useState<string | null>(null)
+  const [overridingId, setOverridingId] = useState<string | null>(null)
+  const [liveConflicts, setLiveConflicts] = useState<Record<string, TrainingConflict[]>>({})
+  // Publish: POST /training-sessions/{id}/transitions {toStatus: PUBLISHED}.
+  // A session with non-overridden bay/mentor overlap is rejected with 409
+  // SCHEDULE_CONFLICT carrying the explainable conflicts[] list.
+  const markReady = (id: string) => {
+    setSessions((prev) => prev.map((x) => (x.id === id ? { ...x, status: 'ready' } : x)))
+    setLiveConflicts((prev) => {
+      const next = { ...prev }
+      delete next[id]
+      return next
+    })
+  }
+  const handlePublish = async (s: DemoSession) => {
+    if (s.conflict) {
+      setActionError(`SCHEDULE_CONFLICT: ${s.conflict}`)
+      return
+    }
+    if (!isUuid(s.id)) {
+      // Demo row has no backend record — advance locally, clearly labeled.
+      markReady(s.id)
+      return
+    }
+    setPublishingId(s.id)
+    setActionError('')
+    try {
+      await trainingApi.transitionSession(s.id, { toStatus: 'PUBLISHED' })
+      markReady(s.id)
+    } catch (err) {
+      if (err instanceof ApiError && err.status === 0) {
+        markReady(s.id)
+      } else if (err instanceof ApiError && err.code === 'SCHEDULE_CONFLICT' && err.conflicts?.length) {
+        setLiveConflicts((prev) => ({ ...prev, [s.id]: err.conflicts ?? [] }))
+        setActionError(`SCHEDULE_CONFLICT: ${err.conflicts.map((c) => c.message).join(' ') || err.message}`)
+      } else {
+        setActionError(err instanceof ApiError ? `${err.code}: ${err.message}` : 'Publish failed')
+      }
+    } finally {
+      setPublishingId(null)
+    }
+  }
+  // Override: POST .../conflict-overrides {conflictKeys, reason>=10} for the
+  // overridable conflicts, then publish. Non-overridable conflicts stay
+  // blocked (409 CONFLICT_NOT_OVERRIDABLE).
+  const handleOverride = async (s: DemoSession) => {
+    const conflicts = liveConflicts[s.id] ?? []
+    const keys = conflicts.filter((c) => c.overridable && !c.overridden).map((c) => c.conflictKey)
+    if (keys.length === 0) {
+      setActionError('CONFLICT_NOT_OVERRIDABLE: no overridable conflicts remain on this session.')
+      return
+    }
+    const reason = window.prompt('Override reason (min 10 characters, recorded in audit):')?.trim() ?? ''
+    if (reason.length < 10) {
+      setActionError('Override reason of at least 10 characters is required.')
+      return
+    }
+    setOverridingId(s.id)
+    setActionError('')
+    try {
+      const report = await trainingApi.createOverrides(s.id, { conflictKeys: keys, reason })
+      if (!report.canPublish) {
+        setLiveConflicts((prev) => ({ ...prev, [s.id]: report.conflicts }))
+        setActionError('SCHEDULE_CONFLICT: overrides recorded, but blocking conflicts remain.')
+        return
+      }
+      await trainingApi.transitionSession(s.id, { toStatus: 'PUBLISHED' })
+      markReady(s.id)
+    } catch (err) {
+      setActionError(err instanceof ApiError ? `${err.code}: ${err.message}` : 'Override failed')
+    } finally {
+      setOverridingId(null)
+    }
+  }
 
   // Edit: PATCH /training-sessions/{id} with optimistic-concurrency version.
   const handleEdit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -291,6 +363,18 @@ export default function Training() {
                   </div>
                 </div>
               )}
+              {(liveConflicts[session.id] ?? []).length > 0 && (
+                <div className="mb-4 bg-amber-50 border border-amber-200 rounded-lg p-3">
+                  <p className="text-sm font-semibold text-amber-800">{t('training.sessions.conflictTitle')}</p>
+                  <ul className="mt-1 flex flex-col gap-1">
+                    {(liveConflicts[session.id] ?? []).map((c) => (
+                      <li key={c.conflictKey} className="text-xs text-amber-700">
+                        · {c.message} {!c.overridable && '(cannot be overridden)'}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
 
               <div className="flex items-start justify-between">
                 <div>
@@ -310,13 +394,10 @@ export default function Training() {
                 </div>
                 <div className="flex gap-2">
                   {!session.conflict && session.status !== 'ready' && (
-                    <Button
-                      size="sm"
-                      disabled
-                      title="Training-session status transitions are not implemented by the backend."
-                    >
-                      {t('training.sessions.publish')}
-                    </Button>
+                    <Button size="sm" loading={publishingId === session.id} onClick={() => handlePublish(session)}>{t('training.sessions.publish')}</Button>
+                  )}
+                  {(liveConflicts[session.id] ?? []).length > 0 && session.status !== 'ready' && (
+                    <Button variant="secondary" size="sm" loading={overridingId === session.id} onClick={() => handleOverride(session)}>Override</Button>
                   )}
                   <Button variant="secondary" size="sm" onClick={() => { setEditError(''); setEditing(session) }}>{t('training.sessions.edit')}</Button>
                 </div>

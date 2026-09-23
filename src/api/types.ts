@@ -70,6 +70,14 @@ export interface ApiErrorBody {
   message: string
   requestId: string
   details?: ErrorDetail[]
+  // Present on 409 SCHEDULE_CONFLICT (job assignment, session publish).
+  conflicts?: Array<{
+    conflictKey: string
+    kind: string
+    overridable: boolean
+    overridden: boolean
+    message: string
+  }>
 }
 
 // ── Auth ──────────────────────────────────────────────────────────────
@@ -337,10 +345,188 @@ export interface TrainingSession extends RecordMeta {
 }
 
 // ── Dashboards / Health ───────────────────────────────────────────────
+// Backend dashboards/* return aggregated MetricDto lists (DecimalString
+// values, never floats). Query filters: from, to, organizationScopeId,
+// storeId, bayId, technicianId, courseId, termId — anything else -> 400.
+export type MetricUnit = 'COUNT' | 'PERCENT' | 'HOURS' | 'DAYS' | 'MONEY' | 'RATIO'
+
+export interface DashboardBreakdown {
+  key: string
+  label: string
+  value: string
+  recordCount?: number
+}
+
+export interface DashboardMetric {
+  key: string
+  label: string
+  unit: MetricUnit
+  value: string
+  currencyCode?: string
+  recordCount: number
+  breakdown?: DashboardBreakdown[]
+}
+
+export type DashboardName = 'WORKSHOP' | 'INVENTORY_FINANCE' | 'TRAINING' | 'AI_DATA'
+
 export interface DashboardResponse {
+  dashboard: DashboardName
   generatedAt: Timestamp
-  metrics: Record<string, number | string>
-  breakdowns?: Record<string, Array<Record<string, number | string>>>
+  dataAsOf: Timestamp
+  filterFingerprint: string
+  appliedFilters: Record<string, string | undefined>
+  metrics: DashboardMetric[]
+}
+
+export interface ReportFilters {
+  from?: string
+  to?: string
+  organizationScopeId?: string
+  storeId?: string
+  bayId?: string
+  technicianId?: string
+  courseId?: string
+  termId?: string
+  [filter: string]: string | undefined
+}
+
+// ── Exports (async: 202 -> poll -> download authorization) ─────────────
+export type ExportType =
+  | 'JOBS' | 'LABOR_ENTRIES' | 'PART_ISSUES' | 'STOCK_BALANCES'
+  | 'STOCK_MOVEMENTS' | 'PURCHASE_ORDERS' | 'INVOICES' | 'CUSTOMER_STATEMENT'
+  | 'ATTENDANCE' | 'ASSESSMENTS' | 'CERTIFICATES' | 'REORDER_SUGGESTIONS'
+  | 'TRAINING_RISK' | 'DASHBOARD_WORKSHOP' | 'DASHBOARD_INVENTORY_FINANCE'
+  | 'DASHBOARD_TRAINING' | 'DASHBOARD_AI_DATA' | 'AUDIT_EVENTS'
+
+export type ExportFormat = 'CSV' | 'PDF'
+
+export type ExportStatus = 'PENDING' | 'PROCESSING' | 'COMPLETED' | 'FAILED' | 'EXPIRED'
+
+export interface ExportJob {
+  id: string
+  exportType: ExportType
+  format: ExportFormat
+  status: ExportStatus
+  filters: Record<string, string | undefined>
+  filterFingerprint: string
+  sensitive: boolean
+  customerId?: string
+  rowCount?: number
+  completedAt?: string
+  expiresAt?: string
+  failureMessage?: string
+  createdAt: string
+  updatedAt: string
+}
+
+// ── Training: assessments / certificates / predictions ──────────────────
+export type AssessmentResult = 'PASS' | 'FAIL' | 'NEEDS_IMPROVEMENT'
+export type SignOffStatus = 'PENDING' | 'SIGNED_OFF' | 'RETURNED'
+export type SignOffDecision = 'SIGNED_OFF' | 'RETURNED'
+
+export interface Assessment extends RecordMeta {
+  sessionId: Uuid
+  studentId: Uuid
+  taskId: Uuid
+  courseId: Uuid
+  result: AssessmentResult
+  timeOnTaskMinutes: number
+  mentorNote?: string
+  evidenceAttachmentIds: Uuid[]
+  assessedBy: Uuid
+  assessedAt: Timestamp
+  signOffStatus: SignOffStatus
+  signedOffBy?: Uuid
+  signedOffAt?: Timestamp
+  signOffNote?: string
+  countsTowardCompletion: boolean
+  version: number
+}
+
+export type CertificateStatus = 'ISSUED' | 'REVOKED'
+
+export interface Certificate extends RecordMeta {
+  certificateNumber: string
+  studentId: Uuid
+  courseId: Uuid
+  issuedAt: Timestamp
+  issuedBy: Uuid
+  status: CertificateStatus
+  revokedAt?: Timestamp
+  revokedBy?: Uuid
+  revocationReason?: string
+  verificationToken?: string // present only on the issue response, never persisted
+}
+
+export type PredictionType = 'REORDER_SUGGESTION' | 'TRAINING_RISK'
+export type PredictionStatus = 'ACTIVE' | 'ACCEPTED' | 'OVERRIDDEN' | 'DISMISSED' | 'SUPERSEDED'
+export type PredictionDecision = 'ACCEPTED' | 'OVERRIDDEN' | 'DISMISSED'
+export type RiskLevel = 'LOW' | 'MEDIUM' | 'HIGH'
+
+export interface Prediction {
+  id: Uuid
+  type: PredictionType
+  status: PredictionStatus
+  advisoryOnly: true
+  generatedAt: Timestamp
+  source: { kind: 'RULE_BASELINE' | 'ML_MODEL'; name: string; version: string }
+  explanation: { summary: string; factors: Array<{ code: string; message: string; value?: string }> }
+  reorder?: {
+    input: { storeId: string; partId: string; partSku: string; onHand: number; reserved: number; available: number; minLevel: number; maxLevel: number; openPurchaseOrderQuantity: number; averageWeeklyConsumption: string; lookbackWeeks: number }
+    result: { suggestedQuantity: number; estimatedWeeksOfCover?: string }
+  }
+  trainingRisk?: {
+    input: { studentId: string; courseId: string; attendancePercent: string; missingAttendanceSessions: number; unsignedAssessmentCount: number; unmetCompetencyCount: number }
+    result: { riskLevel: RiskLevel; flags: string[] }
+  }
+  decision?: { decision: PredictionDecision; decidedBy: string; decidedAt: string; overrideReason?: string; overrideQuantity?: number; note?: string }
+  evaluation: { outcome: 'PENDING' | 'CONFIRMED' | 'NOT_CONFIRMED' | 'NOT_APPLICABLE'; evaluatedAt?: string; note?: string }
+}
+
+// ── Training sessions: conflicts & transitions ──────────────────────────
+export interface TrainingConflict {
+  conflictKey: string
+  kind: string
+  overridable: boolean
+  overridden: boolean
+  message: string
+}
+
+export interface ConflictCheckResponse {
+  hasConflicts: boolean
+  canPublish: boolean
+  conflicts: TrainingConflict[]
+}
+
+export type TrainingSessionTransition = 'PUBLISHED' | 'COMPLETED' | 'CANCELLED'
+
+// ── Student progress (derived read models) ──────────────────────────────
+export interface CompetencyCoverage {
+  competencyId: Uuid
+  code: string
+  name: LocalizedName
+  requiredTasks: number
+  signedPassedRequiredTasks: number
+  pendingUnsignedTasks: number
+  coveragePercent: string
+}
+
+export interface CoverageResponse {
+  studentId: Uuid
+  courseId: Uuid
+  overallPercent: string
+  competencies: CompetencyCoverage[]
+  generatedAt: Timestamp
+}
+
+export interface EligibilityResponse {
+  studentId: Uuid
+  courseId: Uuid
+  eligible: boolean
+  attendancePercent: string
+  minimumAttendancePercent: number
+  unmetConditions: Array<{ code: string; message: string }>
+  evaluatedAt: Timestamp
 }
 
 export interface HealthStatus {

@@ -2,6 +2,8 @@ import React, { useState } from 'react'
 import { PageHeader } from '../components/ui/PageHeader'
 import { Badge } from '../components/ui/Badge'
 import { useLang } from '../i18n/LanguageContext'
+import { invoicesApi, exportsApi } from '../api/resources'
+import { ApiError } from '../api/http'
 import { DemoBadge } from '../components/ui/ApiState'
 import { useAuth } from '../context/AuthContext'
 
@@ -47,28 +49,82 @@ export default function InvoicesReports() {
   const { mode } = useAuth()
   const [filter, setFilter] = useState<InvoiceStatus | 'all'>('all')
   const [search, setSearch] = useState('')
+  const [rows, setRows] = useState<Invoice[]>(invoices)
+  const [exporting, setExporting] = useState(false)
   const [exportError, setExportError] = useState('')
 
-  // The backend implements invoice records but not an export/download pipeline.
-  // CSV is therefore generated strictly from the rows currently visible here;
-  // PDF remains unavailable rather than calling an unsupported endpoint.
-  const handleExport = (format: 'CSV' | 'PDF') => {
+  // Live invoices (GET /invoices). Backend statuses are DRAFT/ISSUED/PAID/
+  // VOID with no due dates: ISSUED maps to the "pending" bucket, VOID to
+  // "draft" (non-posted). Offline: the preview rows stay in place.
+  React.useEffect(() => {
+    let cancelled = false
+    invoicesApi.list({ pageSize: 100, sort: '-createdAt' })
+      .then((res) => {
+        if (cancelled) return
+        const toUi = (s: string): InvoiceStatus =>
+          s === 'PAID' ? 'paid' : s === 'ISSUED' ? 'pending' : 'draft'
+        setRows(res.items.map((inv) => ({
+          id: inv.invoiceNumber ?? inv.id.slice(0, 12).toUpperCase(),
+          jobCard: inv.jobNumber,
+          customer: inv.customerId.slice(0, 8),
+          vehicle: '—',
+          date: new Date(inv.issuedAt ?? inv.createdAt).toLocaleDateString(),
+          dueDate: '—',
+          amount: Number(inv.totals.subtotal.amount) || 0,
+          vat: Number(inv.totals.taxAmount.amount) || 0,
+          total: Number(inv.totals.total.amount) || 0,
+          status: toUi(inv.status),
+          paymentRef: inv.payments[0]?.reference,
+        })))
+      })
+      .catch(() => { /* offline: keep preview rows */ })
+    return () => { cancelled = true }
+  }, [])
+
+  // Contract export flow: POST /exports {exportType: INVOICES} (202) ->
+  // poll -> download authorization. Offline: client-side CSV of the
+  // visible rows; server PDFs cannot be fabricated offline.
+  const handleExport = async (format: 'CSV' | 'PDF') => {
+    setExporting(true)
     setExportError('')
-    if (format === 'PDF') {
-      setExportError('PDF invoice export is not available from the current backend.')
-      return
+    try {
+      const job = await exportsApi.create({ exportType: 'INVOICES', format })
+      let status = job.status
+      for (let i = 0; i < 15 && status !== 'COMPLETED' && status !== 'FAILED' && status !== 'EXPIRED'; i++) {
+        await new Promise((r) => setTimeout(r, 800))
+        try {
+          status = (await exportsApi.get(job.id)).status
+        } catch { break }
+      }
+      if (status === 'COMPLETED') {
+        const auth = await exportsApi.authorizeDownload(job.id)
+        window.open(auth.url, '_blank', 'noopener')
+        return
+      }
+      throw new Error('export not ready')
+    } catch (e) {
+      if (e instanceof ApiError && e.status !== 0) {
+        setExportError(`${e.code}: ${e.message}`)
+        return
+      }
+      if (format === 'PDF') {
+        setExportError('PDF export needs a backend connection — connect VITE_API_BASE_URL and retry.')
+        return
+      }
+      const header = 'Invoice,JobCard,Customer,Date,DueDate,Amount,VAT,Total,Status,Ref'
+      const csvRows = filtered.map((inv) =>
+        [inv.id, inv.jobCard, inv.customer, inv.date, inv.dueDate, inv.amount, inv.vat, inv.total, inv.status, inv.paymentRef ?? ''].join(','),
+      )
+      const blob = new Blob([[header, ...csvRows].join('\n')], { type: 'text/csv' })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = 'invoices.csv'
+      a.click()
+      URL.revokeObjectURL(url)
+    } finally {
+      setExporting(false)
     }
-    const header = 'Invoice,JobCard,Customer,Date,DueDate,Amount,VAT,Total,Status,Ref'
-    const rows = filtered.map((inv) =>
-      [inv.id, inv.jobCard, inv.customer, inv.date, inv.dueDate, inv.amount, inv.vat, inv.total, inv.status, inv.paymentRef ?? ''].join(','),
-    )
-    const blob = new Blob([[header, ...rows].join('\n')], { type: 'text/csv' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = 'invoices.csv'
-    a.click()
-    URL.revokeObjectURL(url)
   }
 
   const statusLabels: Record<InvoiceStatus, string> = {
@@ -78,7 +134,7 @@ export default function InvoicesReports() {
     draft: t('invoices.status.draft'),
   }
 
-  const filtered = invoices.filter((inv) => {
+  const filtered = rows.filter((inv) => {
     const matchStatus = filter === 'all' || inv.status === filter
     const q = search.toLowerCase()
     const matchSearch =
@@ -89,9 +145,9 @@ export default function InvoicesReports() {
     return matchStatus && matchSearch
   })
 
-  const totalPaid = invoices.filter((i) => i.status === 'paid').reduce((s, i) => s + i.total, 0)
-  const totalPending = invoices.filter((i) => i.status === 'pending').reduce((s, i) => s + i.total, 0)
-  const totalOverdue = invoices.filter((i) => i.status === 'overdue').reduce((s, i) => s + i.total, 0)
+  const totalPaid = rows.filter((i) => i.status === 'paid').reduce((s, i) => s + i.total, 0)
+  const totalPending = rows.filter((i) => i.status === 'pending').reduce((s, i) => s + i.total, 0)
+  const totalOverdue = rows.filter((i) => i.status === 'overdue').reduce((s, i) => s + i.total, 0)
 
   const tableHeaders: [string, string][] = [
     [t('invoices.col.invoice'), 'invoice'],
@@ -116,7 +172,8 @@ export default function InvoicesReports() {
             <DemoBadge visible={mode === 'demo'} />
             <button
               onClick={() => handleExport('CSV')}
-              className="flex items-center gap-2 px-3 py-2 border border-slate-200 rounded-lg text-sm text-slate-600 hover:bg-slate-50 transition-colors"
+              disabled={exporting}
+              className="flex items-center gap-2 px-3 py-2 border border-slate-200 rounded-lg text-sm text-slate-600 hover:bg-slate-50 transition-colors disabled:opacity-50"
             >
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75">
                 <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
@@ -137,17 +194,17 @@ export default function InvoicesReports() {
         <div className="bg-white border border-slate-200 rounded-xl p-4">
           <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-1">{t('invoices.kpi.collected')}</p>
           <p className="text-2xl font-bold text-green-600">{fmt(totalPaid)}</p>
-          <p className="text-xs text-slate-400 mt-0.5">{invoices.filter((i) => i.status === 'paid').length} {t('invoices.invoicesSuffix')}</p>
+          <p className="text-xs text-slate-400 mt-0.5">{rows.filter((i) => i.status === 'paid').length} {t('invoices.invoicesSuffix')}</p>
         </div>
         <div className="bg-white border border-slate-200 rounded-xl p-4">
           <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-1">{t('invoices.kpi.outstanding')}</p>
           <p className="text-2xl font-bold text-amber-600">{fmt(totalPending)}</p>
-          <p className="text-xs text-slate-400 mt-0.5">{invoices.filter((i) => i.status === 'pending').length} {t('invoices.invoicesSuffix')}</p>
+          <p className="text-xs text-slate-400 mt-0.5">{rows.filter((i) => i.status === 'pending').length} {t('invoices.invoicesSuffix')}</p>
         </div>
         <div className="bg-white border border-slate-200 rounded-xl p-4">
           <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-1">{t('invoices.status.overdue')}</p>
           <p className="text-2xl font-bold text-red-600">{fmt(totalOverdue)}</p>
-          <p className="text-xs text-slate-400 mt-0.5">{invoices.filter((i) => i.status === 'overdue').length} {t('invoices.invoicesSuffix')}</p>
+          <p className="text-xs text-slate-400 mt-0.5">{rows.filter((i) => i.status === 'overdue').length} {t('invoices.invoicesSuffix')}</p>
         </div>
       </div>
 
@@ -273,10 +330,11 @@ export default function InvoicesReports() {
 
         {/* Footer */}
         <div className="flex items-center justify-between px-4 py-3 border-t border-slate-100">
-          <p className="text-xs text-slate-400">{t('customers.showing')} 1–{filtered.length} {t('customers.of')} {invoices.length} {t('invoices.invoicesSuffix')}</p>
+          <p className="text-xs text-slate-400">{t('customers.showing')} 1–{filtered.length} {t('customers.of')} {rows.length} {t('invoices.invoicesSuffix')}</p>
           <button
             onClick={() => handleExport('PDF')}
-            className="flex items-center gap-1.5 text-xs text-blue-600 font-medium hover:text-blue-700"
+            disabled={exporting}
+            className="flex items-center gap-1.5 text-xs text-blue-600 font-medium hover:text-blue-700 disabled:opacity-50"
           >
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75">
               <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" />

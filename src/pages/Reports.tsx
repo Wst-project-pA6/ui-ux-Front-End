@@ -4,10 +4,25 @@ import {
   BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend
 } from 'recharts'
 import { useLang } from '../i18n/LanguageContext'
+import { dashboardsApi, exportsApi } from '../api/resources'
+import type { DashboardMetric, ExportType } from '../api/types'
+import { ApiError } from '../api/http'
 import { DemoBadge } from '../components/ui/ApiState'
 import { useAuth } from '../context/AuthContext'
 
 type ReportTab = 'workshop' | 'inventory' | 'training'
+
+const TAB_EXPORT_TYPE: Record<ReportTab, ExportType> = {
+  workshop: 'DASHBOARD_WORKSHOP',
+  inventory: 'DASHBOARD_INVENTORY_FINANCE',
+  training: 'DASHBOARD_TRAINING',
+}
+
+const TAB_DASHBOARD: Record<ReportTab, () => Promise<{ metrics: DashboardMetric[] }>> = {
+  workshop: () => dashboardsApi.workshop(),
+  inventory: () => dashboardsApi.inventoryFinance(),
+  training: () => dashboardsApi.training(),
+}
 
 const jobsByStage = [
   { stage: 'Received', count: 12 },
@@ -69,11 +84,75 @@ export default function Reports() {
   const { mode } = useAuth()
   const [tab, setTab] = useState<ReportTab>('workshop')
   const [exportError, setExportError] = useState('')
+  const [exporting, setExporting] = useState(false)
+  const [metrics, setMetrics] = useState<Record<string, DashboardMetric>>({})
 
-  // The current backend has no reports/dashboard export controller. Keep the
-  // preview visible, but never send users to a route that does not exist.
-  const handleExport = () => {
-    setExportError('PDF report export is not available from the current backend.')
+  // Live dashboard metrics for the active tab. Offline or unauthorized ->
+  // the preview constants below stay in place (clearly demo data).
+  React.useEffect(() => {
+    let cancelled = false
+    TAB_DASHBOARD[tab]()
+      .then((res) => {
+        if (!cancelled) setMetrics(Object.fromEntries(res.metrics.map((m) => [m.key, m])))
+      })
+      .catch(() => { if (!cancelled) setMetrics({}) })
+    return () => { cancelled = true }
+  }, [tab])
+
+  const mv = (key: string): string | undefined => metrics[key]?.value
+  const num = (key: string): number | undefined => {
+    const v = mv(key)
+    if (v === undefined) return undefined
+    const n = Number(v)
+    return Number.isFinite(n) ? n : undefined
+  }
+  // Live breakdown-driven datasets (fall back to preview constants).
+  const stageData = metrics['JOBS_BY_STAGE']?.breakdown?.length
+    ? metrics['JOBS_BY_STAGE'].breakdown!.map((b) => ({ stage: b.label, count: Number(b.value) || 0 }))
+    : jobsByStage
+  const bayData = metrics['BAY_UTILIZATION']?.breakdown?.length
+    ? metrics['BAY_UTILIZATION'].breakdown!.map((b) => ({ bay: b.label, pct: Number(b.value) || 0 }))
+    : bayUtilization
+  const pass = num('PASS_RATE')
+  const needs = num('NEEDS_IMPROVEMENT_RATE')
+  const passData = pass !== undefined
+    ? [
+      { name: 'Pass', value: pass, color: '#16A34A' },
+      { name: 'Needs Improvement', value: needs ?? 0, color: '#D97706' },
+      { name: 'Fail', value: Math.max(0, 100 - pass - (needs ?? 0)), color: '#DC2626' },
+    ]
+    : passRateData
+
+  // Contract export flow: POST /exports (202) -> poll -> download
+  // authorization -> open file. Offline: honest error (a server-rendered
+  // PDF cannot be fabricated locally).
+  const handleExport = async () => {
+    setExporting(true)
+    setExportError('')
+    try {
+      const job = await exportsApi.create({ exportType: TAB_EXPORT_TYPE[tab], format: 'PDF' })
+      let status = job.status
+      for (let i = 0; i < 15 && status !== 'COMPLETED' && status !== 'FAILED' && status !== 'EXPIRED'; i++) {
+        await new Promise((r) => setTimeout(r, 800))
+        try {
+          status = (await exportsApi.get(job.id)).status
+        } catch { break }
+      }
+      if (status === 'COMPLETED') {
+        const auth = await exportsApi.authorizeDownload(job.id)
+        window.open(auth.url, '_blank', 'noopener')
+        return
+      }
+      throw new Error('export not ready')
+    } catch (e) {
+      if (e instanceof ApiError && e.status === 0) {
+        setExportError('PDF export needs a backend connection — connect VITE_API_BASE_URL and retry.')
+      } else {
+        setExportError(e instanceof ApiError ? `${e.code}: ${e.message}` : 'Export failed')
+      }
+    } finally {
+      setExporting(false)
+    }
   }
 
   const tabs: { key: ReportTab; label: string }[] = [
@@ -92,6 +171,7 @@ export default function Reports() {
             <DemoBadge visible={mode === 'demo'} />
             <button
               onClick={handleExport}
+              disabled={exporting}
               className="flex items-center gap-2 px-3 py-2 border border-slate-200 rounded-lg text-sm text-slate-600 hover:bg-slate-50 disabled:opacity-50"
             >
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" /></svg>
@@ -123,10 +203,10 @@ export default function Reports() {
           {/* KPI Row */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {[
-              { label: t('reports.kpi.avgTurnaround'), value: '12.4h', change: '↓ 0.8h vs last month', positive: true },
-              { label: t('reports.kpi.reworkRate'), value: '3.2%', change: '↓ 0.5% vs last month', positive: true },
-              { label: t('reports.kpi.totalLaborHours'), value: '312h', change: '↑ 24h vs last month', positive: false },
-              { label: t('reports.kpi.jobsThisMonth'), value: '208', change: '↑ 18 vs last month', positive: true },
+              { label: t('reports.kpi.avgTurnaround'), value: mv('TURNAROUND_HOURS') !== undefined ? `${mv('TURNAROUND_HOURS')}h` : '12.4h', change: '↓ 0.8h vs last month', positive: true },
+              { label: t('reports.kpi.reworkRate'), value: mv('REWORK_RATE') !== undefined ? `${mv('REWORK_RATE')}%` : '3.2%', change: '↓ 0.5% vs last month', positive: true },
+              { label: t('reports.kpi.totalLaborHours'), value: mv('LABOR_HOURS') !== undefined ? `${mv('LABOR_HOURS')}h` : '312h', change: '↑ 24h vs last month', positive: false },
+              { label: t('reports.kpi.jobsThisMonth'), value: metrics['JOBS_BY_STAGE'] ? String(metrics['JOBS_BY_STAGE'].recordCount) : '208', change: '↑ 18 vs last month', positive: true },
             ].map((kpi) => (
               <div key={kpi.label} className="bg-white border border-slate-200 rounded-xl p-5">
                 <p className="text-sm text-slate-500 font-medium">{kpi.label}</p>
@@ -141,7 +221,7 @@ export default function Reports() {
             <div className="bg-white border border-slate-200 rounded-xl p-6">
               <h3 className="text-base font-semibold text-slate-900 mb-4">{t('reports.chart.jobsByStage')}</h3>
               <ResponsiveContainer width="100%" height={220}>
-                <BarChart data={jobsByStage} margin={{ left: -20 }}>
+                <BarChart data={stageData} margin={{ left: -20 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#F1F5F9" />
                   <XAxis dataKey="stage" tick={{ fontSize: 11, fill: '#64748B' }} />
                   <YAxis tick={{ fontSize: 11, fill: '#64748B' }} />
@@ -186,7 +266,7 @@ export default function Reports() {
             <div className="bg-white border border-slate-200 rounded-xl p-6">
               <h3 className="text-base font-semibold text-slate-900 mb-4">{t('reports.chart.bayUtil')}</h3>
               <div className="flex flex-col gap-3 mt-2">
-                {bayUtilization.map((b) => (
+                {bayData.map((b) => (
                   <div key={b.bay}>
                     <div className="flex justify-between mb-1">
                       <span className="text-sm text-slate-700">{b.bay}</span>
@@ -210,10 +290,10 @@ export default function Reports() {
         <div className="space-y-6">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {[
-              { label: t('reports.inv.kpi.accuracy'), value: '96.8%', positive: true },
-              { label: t('reports.inv.kpi.stockouts'), value: '2', positive: false },
-              { label: t('reports.inv.kpi.turnover'), value: '3.6x', positive: true },
-              { label: t('reports.inv.kpi.leadTime'), value: '4.2 days', positive: true },
+              { label: t('reports.inv.kpi.accuracy'), value: mv('STOCK_ACCURACY') !== undefined ? `${mv('STOCK_ACCURACY')}%` : '96.8%', positive: true },
+              { label: t('reports.inv.kpi.stockouts'), value: mv('STOCKOUTS') ?? '2', positive: false },
+              { label: t('reports.inv.kpi.turnover'), value: mv('INVENTORY_TURNOVER') !== undefined ? `${mv('INVENTORY_TURNOVER')}x` : '3.6x', positive: true },
+              { label: t('reports.inv.kpi.leadTime'), value: mv('PURCHASE_LEAD_TIME_DAYS') !== undefined ? `${mv('PURCHASE_LEAD_TIME_DAYS')} days` : '4.2 days', positive: true },
             ].map((kpi) => (
               <div key={kpi.label} className="bg-white border border-slate-200 rounded-xl p-5">
                 <p className="text-sm text-slate-500 font-medium">{kpi.label}</p>
@@ -276,10 +356,10 @@ export default function Reports() {
         <div className="space-y-6">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {[
-              { label: t('reports.train.kpi.attendance'), value: '90.4%', positive: true },
-              { label: t('reports.train.kpi.passRate'), value: '68%', positive: true },
-              { label: t('reports.train.kpi.certs'), value: '24', positive: true },
-              { label: t('reports.train.kpi.coverage'), value: '78%', positive: true },
+              { label: t('reports.train.kpi.attendance'), value: mv('ATTENDANCE_RATE') !== undefined ? `${mv('ATTENDANCE_RATE')}%` : '90.4%', positive: true },
+              { label: t('reports.train.kpi.passRate'), value: mv('PASS_RATE') !== undefined ? `${mv('PASS_RATE')}%` : '68%', positive: true },
+              { label: t('reports.train.kpi.certs'), value: mv('CERTIFICATES_ISSUED') ?? '24', positive: true },
+              { label: t('reports.train.kpi.coverage'), value: mv('COMPETENCY_COVERAGE') !== undefined ? `${mv('COMPETENCY_COVERAGE')}%` : '78%', positive: true },
             ].map((kpi) => (
               <div key={kpi.label} className="bg-white border border-slate-200 rounded-xl p-5">
                 <p className="text-sm text-slate-500 font-medium">{kpi.label}</p>
@@ -307,8 +387,8 @@ export default function Reports() {
               <div className="flex items-center justify-between">
                 <ResponsiveContainer width="60%" height={200}>
                   <PieChart>
-                    <Pie data={passRateData} cx="50%" cy="50%" innerRadius={55} outerRadius={80} dataKey="value">
-                      {passRateData.map((entry, i) => (
+                    <Pie data={passData} cx="50%" cy="50%" innerRadius={55} outerRadius={80} dataKey="value">
+                      {passData.map((entry, i) => (
                         <Cell key={i} fill={entry.color} />
                       ))}
                     </Pie>
@@ -316,7 +396,7 @@ export default function Reports() {
                   </PieChart>
                 </ResponsiveContainer>
                 <div className="flex flex-col gap-2">
-                  {passRateData.map((l) => (
+                  {passData.map((l) => (
                     <div key={l.name} className="flex items-center gap-2">
                       <div className="w-3 h-3 rounded-full shrink-0" style={{ background: l.color }} />
                       <span className="text-xs text-slate-600">{l.name}</span>

@@ -4,13 +4,35 @@ import { Badge } from '../components/ui/Badge'
 import { Button } from '../components/ui/Button'
 import { Modal } from '../components/ui/Modal'
 import { useLang } from '../i18n/LanguageContext'
+import { assessmentsApi, trainingApi } from '../api/resources'
+import type { Student, Course } from '../api/resources'
+import { ApiError } from '../api/http'
+import { errorMessage } from '../api/mapping'
+import { isUuid } from '../api/identity'
 import { DemoBadge } from '../components/ui/ApiState'
 import { useAuth } from '../context/AuthContext'
 
 type AttendanceStatus = 'present' | 'absent' | 'late'
 type AssessmentResult = 'pass' | 'fail' | 'needs-improvement'
 
-const INITIAL_ASSESSMENTS = [
+interface AssessmentRow {
+  id: string
+  student: string
+  course: string
+  session: string
+  task: string
+  attendance?: AttendanceStatus
+  result: AssessmentResult
+  timeOnTask: string
+  signed: boolean
+  mentor: string
+  date: string
+  note?: string
+}
+
+const shortId = (id: string) => (isUuid(id) ? id.slice(0, 8) : id)
+
+const INITIAL_ASSESSMENTS: AssessmentRow[] = [
   { id: 'ASS-001', student: 'Abdullah Al-Faraj', course: 'Engine Overhaul Basics', session: 'SES-001', task: 'Oil Change Procedure', attendance: 'present' as AttendanceStatus, result: 'pass' as AssessmentResult, timeOnTask: '45 min', signed: true, mentor: 'Eng. Sami Al-Rashidi', date: 'Sep 19, 2024' },
   { id: 'ASS-002', student: 'Lama Al-Saqr', course: 'Brake System Inspection', session: 'SES-002', task: 'Brake Pad Measurement', attendance: 'present' as AttendanceStatus, result: 'needs-improvement' as AssessmentResult, timeOnTask: '62 min', signed: false, mentor: 'Eng. Fatima Hassan', date: 'Sep 19, 2024' },
   { id: 'ASS-003', student: 'Turki Al-Dosari', course: 'Engine Overhaul Basics', session: 'SES-001', task: 'Oil Change Procedure', attendance: 'late' as AttendanceStatus, result: 'pass' as AssessmentResult, timeOnTask: '55 min', signed: true, mentor: 'Eng. Sami Al-Rashidi', date: 'Sep 19, 2024' },
@@ -28,15 +50,78 @@ export default function Assessments() {
   const { t } = useLang()
   const { mode } = useAuth()
   const [search, setSearch] = useState('')
-  const [assessments, setAssessments] = useState(INITIAL_ASSESSMENTS)
+  const [assessments, setAssessments] = useState<AssessmentRow[]>(INITIAL_ASSESSMENTS)
   const [detailOpen, setDetailOpen] = useState(false)
-  const [selected, setSelected] = useState<(typeof INITIAL_ASSESSMENTS)[0] | null>(null)
+  const [selected, setSelected] = useState<AssessmentRow | null>(null)
+  const [signingId, setSigningId] = useState<string | null>(null)
   const [signError, setSignError] = useState('')
 
-  // Assessment and certificate controllers are not part of the supplied
-  // backend. Preserve the preview as read-only and avoid a fake sign-off.
-  const handleSignOff = () => {
-    setSignError('Assessment sign-off is not available from the current backend.')
+  // Live assessments (backend paged list). Display names resolve through the
+  // students/courses catalogs; rows without a backend record keep demo data.
+  React.useEffect(() => {
+    let cancelled = false
+    ;(async () => {
+      try {
+        const [list, students, courses] = await Promise.all([
+          assessmentsApi.list({ pageSize: 100, sort: '-assessedAt' }),
+          trainingApi.students({ pageSize: 100 }).catch(() => ({ items: [] as Student[], page: null })),
+          trainingApi.courses({ pageSize: 100 }).catch(() => ({ items: [] as Course[] })),
+        ])
+        if (cancelled) return
+        const studentNames = new Map(students.items.map((s) => [s.id, s.displayName ?? s.id]))
+        const courseNames = new Map(courses.items.map((c) => [c.id, c.name?.en ?? c.id]))
+        const toUi = (r: string): AssessmentResult =>
+          r === 'PASS' ? 'pass' : r === 'FAIL' ? 'fail' : 'needs-improvement'
+        setAssessments(list.items.map((a) => ({
+          id: a.id,
+          student: studentNames.get(a.studentId) ?? shortId(a.studentId),
+          course: courseNames.get(a.courseId) ?? shortId(a.courseId),
+          session: shortId(a.sessionId),
+          task: shortId(a.taskId),
+          result: toUi(a.result),
+          timeOnTask: `${a.timeOnTaskMinutes} min`,
+          signed: a.signOffStatus === 'SIGNED_OFF',
+          mentor: shortId(a.assessedBy),
+          date: new Date(a.assessedAt).toLocaleDateString(),
+          note: a.mentorNote,
+        })))
+      } catch (err) {
+        // Offline or forbidden: keep the demo preview, clearly labeled.
+        if (!(err instanceof ApiError) || err.status !== 0) {
+          setSignError(err instanceof ApiError ? `${err.code}: ${err.message}` : 'Unable to load assessments')
+        }
+      }
+    })()
+    return () => { cancelled = true }
+  }, [])
+
+  // Supervisor sign-off: POST /assessments/{id}/sign-off {decision}.
+  // Signed-off rows are immutable server-side (409 ASSESSMENT_LOCKED).
+  const handleSignOff = async (id: string) => {
+    if (!isUuid(id)) {
+      const mark = (a: AssessmentRow) => (a.id === id ? { ...a, signed: true } : a)
+      setAssessments((prev) => prev.map(mark))
+      setSelected((prev) => (prev && prev.id === id ? { ...prev, signed: true } : prev))
+      return
+    }
+    setSigningId(id)
+    setSignError('')
+    try {
+      await assessmentsApi.signOff(id, { decision: 'SIGNED_OFF' })
+      const mark = (a: AssessmentRow) => (a.id === id ? { ...a, signed: true } : a)
+      setAssessments((prev) => prev.map(mark))
+      setSelected((prev) => (prev && prev.id === id ? { ...prev, signed: true } : prev))
+    } catch (err) {
+      if (err instanceof ApiError && err.status === 0) {
+        const mark = (a: AssessmentRow) => (a.id === id ? { ...a, signed: true } : a)
+        setAssessments((prev) => prev.map(mark))
+        setSelected((prev) => (prev && prev.id === id ? { ...prev, signed: true } : prev))
+      } else {
+        setSignError(err instanceof ApiError ? errorMessage(err.code, err.message) : 'Sign-off failed')
+      }
+    } finally {
+      setSigningId(null)
+    }
   }
 
   const filtered = assessments.filter(
@@ -116,9 +201,13 @@ export default function Assessments() {
                 </td>
                 <td className="px-6 py-4 text-slate-500 text-xs">{a.date}</td>
                 <td className="px-6 py-4">
-                  <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium capitalize ${attendanceBadgeStyle[a.attendance]}`}>
-                    {attendanceLabel(a.attendance)}
-                  </span>
+                  {a.attendance ? (
+                    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium capitalize ${attendanceBadgeStyle[a.attendance]}`}>
+                      {attendanceLabel(a.attendance)}
+                    </span>
+                  ) : (
+                    <span className="text-xs text-slate-400">—</span>
+                  )}
                 </td>
                 <td className="px-6 py-4"><Badge variant={a.result} /></td>
                 <td className="px-6 py-4 text-slate-600 text-xs">{a.timeOnTask}</td>
@@ -138,7 +227,7 @@ export default function Assessments() {
                 <td className="px-6 py-4">
                   <div onClick={(e) => e.stopPropagation()}>
                     {!a.signed && (
-                      <Button size="sm" variant="secondary" onClick={handleSignOff}>{t('assessments.signOffBtn')}</Button>
+                      <Button size="sm" variant="secondary" loading={signingId === a.id} onClick={() => handleSignOff(a.id)}>{t('assessments.signOffBtn')}</Button>
                     )}
                   </div>
                 </td>
@@ -158,7 +247,7 @@ export default function Assessments() {
           footer={
             <>
               <Button variant="secondary" onClick={() => { setDetailOpen(false); setSelected(null) }}>{t('action.close')}</Button>
-              {!selected.signed && <Button onClick={handleSignOff}>{t('action.supervisorSignOff')}</Button>}
+              {!selected.signed && <Button loading={signingId === selected.id} onClick={() => handleSignOff(selected.id)}>{t('action.supervisorSignOff')}</Button>}
             </>
           }
         >
@@ -184,7 +273,7 @@ export default function Assessments() {
                 { label: t('assessments.detail.task'), value: selected.task },
                 { label: t('assessments.detail.mentor'), value: selected.mentor },
                 { label: t('assessments.detail.date'), value: selected.date },
-                { label: t('assessments.detail.attendance'), value: <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium capitalize ${attendanceBadgeStyle[selected.attendance]}`}>{attendanceLabel(selected.attendance)}</span> },
+                { label: t('assessments.detail.attendance'), value: selected.attendance ? <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium capitalize ${attendanceBadgeStyle[selected.attendance]}`}>{attendanceLabel(selected.attendance)}</span> : '—' },
                 { label: t('assessments.detail.timeOnTask'), value: selected.timeOnTask },
               ].map((item) => (
                 <div key={item.label} className="bg-slate-50 rounded-lg p-3">
@@ -212,11 +301,11 @@ export default function Assessments() {
             <div>
               <p className="text-xs text-slate-400 mb-1">{t('assessments.detail.mentorNote')}</p>
               <div className="bg-slate-50 rounded-lg p-3 text-sm text-slate-700">
-                {selected.result === 'pass'
+                {selected.note ?? (selected.result === 'pass'
                   ? 'Student demonstrated good understanding of the procedure. All safety protocols followed correctly.'
                   : selected.result === 'needs-improvement'
                   ? 'Student needs more practice with the measurement technique. Recommend additional supervised session before reassessment.'
-                  : 'Student was absent during the practical session. Reschedule required.'}
+                  : 'Student was absent during the practical session. Reschedule required.')}
               </div>
             </div>
           </div>
