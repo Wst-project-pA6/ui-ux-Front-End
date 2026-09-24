@@ -5,41 +5,58 @@ import { useLang } from '../i18n/LanguageContext'
 import { useRole } from '../context/RoleContext'
 import { useAuth } from '../context/AuthContext'
 import SupervisorTraining from '../components/training/SupervisorTraining'
+import MentorView from '../components/training/MentorView'
 import StudentTraining from '../components/training/StudentTraining'
 
 /**
- * Shared Training module — ONE route (/training) for both roles.
+ * Shared Training module — ONE route (/training), THREE role experiences.
  *
  * Role detection comes from the centralized RoleContext (synced with the
- * backend session in AuthContext). The route guard already restricts /training
- * to supervisor + student; the dispatcher below is a second, defensive layer:
+ * backend session in AuthContext). The route guard already restricts
+ * /training to supervisor + mentor + student; the dispatcher below is a
+ * second, defensive layer:
  *
- *   authenticated user → role → SupervisorTraining | StudentTraining
+ *   authenticated user → role → SupervisorTraining | MentorView | StudentTraining
  *
- * Supervisor and student never share management actions or each other's
- * private data: students see only their own records (the backend restricts
- * GET /assessments via students.self), and sign-off requires
- * training.signoff, which students do not have.
+ * Per the WST Roles & Use Cases documentation:
+ * - Training Supervisor: full program management (courses → certificates).
+ * - Mentor: ONLY assigned sessions/groups/students; attendance + result
+ *   entry; correct returned results. Never sign-off, never administration.
+ * - Student: ONLY their own sessions/attendance/tasks/results/
+ *   competencies/certificates. No dashboard, no other students, no admin.
+ * Training APIs are not in Final v1: all views run on clearly isolated
+ * mock data (DemoBadge) until the official Training contract arrives.
  */
 export default function Training() {
   const { t } = useLang()
   const { role, config } = useRole()
   const { mode } = useAuth()
 
-  if (role !== 'supervisor' && role !== 'student') {
+  if (role !== 'supervisor' && role !== 'mentor' && role !== 'student') {
     return <Navigate to={config.homeRoute} replace />
   }
 
-  const isStudent = role === 'student'
+  const subtitle =
+    role === 'student'
+      ? t('training.subtitleStudent')
+      : role === 'mentor'
+        ? t('training.subtitleMentor')
+        : t('training.subtitle')
 
   return (
     <div className="space-y-6">
       <PageHeader
         title={t('training.title')}
-        subtitle={isStudent ? t('training.subtitleStudent') : t('training.subtitle')}
+        subtitle={subtitle}
         actions={<DemoBadge visible={mode === 'demo'} />}
       />
-      {isStudent ? <StudentTraining /> : <SupervisorTraining />}
+      {role === 'student' ? (
+        <StudentTraining />
+      ) : role === 'mentor' ? (
+        <MentorView />
+      ) : (
+        <SupervisorTraining />
+      )}
     </div>
   )
 }

@@ -12,7 +12,7 @@ export interface DemoUser {
 // Offline fallback only — the live backend is the source of truth.
 const SEEDED_USERS: DemoUser[] = Object.entries(ROLE_CONFIGS).map(([role, cfg]) => ({
   name: cfg.userName,
-  email: `${role === 'admin' ? 'admin' : role === 'manager' ? 'ahmed' : role === 'advisor' ? 'sara' : role === 'technician' ? 'khalid' : role === 'storekeeper' ? 'nasser' : role === 'supervisor' ? 'sami' : role === 'student' ? 'rayan' : 'layla'}@wst.sa`,
+  email: `${role === 'admin' ? 'admin' : role === 'manager' ? 'ahmed' : role === 'advisor' ? 'sara' : role === 'technician' ? 'khalid' : role === 'storekeeper' ? 'nasser' : role === 'supervisor' ? 'sami' : role === 'mentor' ? 'mentor' : role === 'student' ? 'rayan' : 'layla'}@wst.sa`,
   role: role as Role,
   password: 'Demo@1234',
 }))

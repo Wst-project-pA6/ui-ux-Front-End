@@ -7,6 +7,7 @@ export type Role =
   | 'technician'
   | 'storekeeper'
   | 'supervisor'
+  | 'mentor'
   | 'student'
   | 'finance'
 
@@ -75,15 +76,23 @@ export const ROLE_CONFIGS: Record<Role, RoleConfig> = {
   supervisor: {
     label: 'Training Supervisor',
     homeRoute: '/training',
-    allowedPaths: ['/training', '/assessments', '/competencies', '/role-matrix'],
+    allowedPaths: ['/training', '/assessments', '/competencies', '/role-matrix', '/settings'],
     userName: 'Eng. Sami R.',
     userLabel: 'Training Supervisor',
     initials: 'SR',
   },
+  mentor: {
+    label: 'Mentor',
+    homeRoute: '/training',
+    allowedPaths: ['/training', '/settings'],
+    userName: 'Waleed K.',
+    userLabel: 'Mentor',
+    initials: 'WK',
+  },
   student: {
     label: 'Student',
     homeRoute: '/my-training',
-    allowedPaths: ['/my-training', '/training'],
+    allowedPaths: ['/my-training', '/training', '/settings'],
     userName: 'Rayan O.',
     userLabel: 'Student Technician',
     initials: 'RO',
@@ -118,7 +127,7 @@ interface RoleContextValue {
 
 const RoleContext = createContext<RoleContextValue | null>(null)
 
-const VALID_ROLES = new Set<Role>(['admin', 'manager', 'advisor', 'technician', 'storekeeper', 'supervisor', 'student', 'finance'])
+const VALID_ROLES = new Set<Role>(['admin', 'manager', 'advisor', 'technician', 'storekeeper', 'supervisor', 'mentor', 'student', 'finance'])
 
 export function RoleProvider({ children }: { children: React.ReactNode }) {
   const [role, setRoleState] = useState<Role>(() => {

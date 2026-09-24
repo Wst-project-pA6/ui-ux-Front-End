@@ -24,6 +24,7 @@ const DEMO_PERMISSIONS: Record<Role, string[]> = {
   technician: [],
   storekeeper: [],
   supervisor: [],
+  mentor: [],
   student: [],
   finance: [],
 }
