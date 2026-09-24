@@ -1,0 +1,127 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+Arabic:wght@400;500;600;700&display=swap');
+@import 'tailwindcss';
+
+@theme {
+  /* ── WST Colors: Base ── */
+  --color-wst-background: #F8FAFC;
+  --color-wst-surface: #FFFFFF;
+  --color-wst-border: #E5E7EB;
+
+  /* ── WST Colors: Text ── */
+  --color-wst-text-primary: #0F172A;
+  --color-wst-text-secondary: #64748B;
+  --color-wst-text-muted: #94A3B8;
+  --color-wst-text-on-accent: #FFFFFF;
+
+  /* ── WST Colors: Accent ── */
+  --color-wst-accent: #2563EB;
+  --color-wst-accent-hover: #1D4ED8;
+  --color-wst-accent-soft: #DBEAFE;
+
+  /* ── WST Colors: Sidebar ── */
+  --color-wst-sidebar-bg: #0F172A;
+  --color-wst-sidebar-inactive: #94A3B8;
+  --color-wst-sidebar-active: #FFFFFF;
+
+  /* ── WST Colors: Status ── */
+  --color-wst-success-text: #16A34A;
+  --color-wst-success-bg: #DCFCE7;
+  --color-wst-danger-text: #DC2626;
+  --color-wst-danger-bg: #FEE2E2;
+  --color-wst-info-text: #2563EB;
+  --color-wst-info-bg: #DBEAFE;
+  --color-wst-purple-text: #7C3AED;
+  --color-wst-purple-bg: #EDE9FE;
+
+  /* ── Legacy aliases (kept for existing components) ── */
+  --color-primary: #2563EB;
+  --color-primary-hover: #1D4ED8;
+  --color-primary-light: #EFF6FF;
+  --color-dark: #0F172A;
+  --color-background: #F8FAFC;
+  --color-surface: #FFFFFF;
+  --color-border: #E2E8F0;
+  --color-text-primary: #0F172A;
+  --color-text-secondary: #64748B;
+  --color-text-tertiary: #94A3B8;
+  --color-success: #16A34A;
+  --color-success-light: #F0FDF4;
+  --color-warning: #D97706;
+  --color-warning-light: #FFFBEB;
+  --color-error: #DC2626;
+  --color-error-light: #FEF2F2;
+  --color-info: #0284C7;
+  --color-info-light: #F0F9FF;
+  --font-family-sans: 'Inter', system-ui, sans-serif;
+}
+
+/* ── WST Spacing & Radius variables ── */
+:root {
+  --wst-space-4: 4px;
+  --wst-space-8: 8px;
+  --wst-space-12: 12px;
+  --wst-space-16: 16px;
+  --wst-space-20: 20px;
+  --wst-space-24: 24px;
+  --wst-radius-sm: 8px;
+  --wst-radius-md: 12px;
+  --wst-radius-full: 9999px;
+  /* ── Effect: Card Shadow ── */
+  --wst-shadow-card: 0 1px 3px 0 rgba(0,0,0,0.07), 0 1px 2px -1px rgba(0,0,0,0.05);
+  /* ── Effect: Focus Ring ── */
+  --wst-focus-ring: 0 0 0 3px rgba(37,99,235,0.25);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: 'Inter', system-ui, sans-serif;
+  background-color: #F8FAFC;
+  color: #0F172A;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Hide scrollbars by default, show on hover */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #CBD5E1;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #94A3B8;
+}
+
+/* RTL — Arabic font and layout corrections */
+[dir='rtl'] {
+  font-family: 'Noto Sans Arabic', 'Inter', system-ui, sans-serif;
+}
+
+/* Keep technical identifiers LTR inside RTL pages */
+[dir='rtl'] [dir='ltr'] {
+  unicode-bidi: isolate;
+}
+
+/* Prevent table column overflow on RTL */
+[dir='rtl'] table {
+  text-align: start;
+}
