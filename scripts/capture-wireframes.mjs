@@ -2,7 +2,7 @@ import { chromium } from 'playwright-core';
 import path from 'node:path';
 
 const BASE = 'http://localhost:4173';
-const OUT = path.resolve('wireframes');
+const OUT = 'C:/Users/CS/AppData/Local/Temp/opencode/shots';
 const CHROME = 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe';
 
 const shots = [

@@ -1,10 +1,10 @@
-// Authentication endpoints (contract tag: Authentication).
+// Authentication endpoints (Final v1 contract).
 // POST /auth/login + /auth/refresh are public + rate-limited per IP/account.
 // POST /auth/logout + GET /auth/me + POST /auth/change-password need a token.
 // NOTE: the contract has NO public sign-up and NO forgot-password endpoint:
 // user creation is POST /users (permission users.manage) and password change
-// is authenticated-only. The UI reflects that (see SignUp / ForgotPassword).
-import { api, tokenStore } from './http'
+// is authenticated-only. There is no registration UI.
+import { api, tokenStore, refreshAccessToken, ApiError } from './http'
 import type { CurrentUser, TokenPair } from './types'
 
 export interface LoginRequest {
@@ -13,20 +13,34 @@ export interface LoginRequest {
 }
 
 export async function login(req: LoginRequest): Promise<TokenPair> {
-  const pair = await api.post<TokenPair>('/auth/login', req, { public: true })
-  tokenStore.save(pair.accessToken, pair.refreshToken)
-  return pair
+  // The hosted backend cold-starts: a login attempt may hit a gateway
+  // 502/503/504 or a dropped connection. Safe to retry (each attempt mints
+  // its own session; orphans expire server-side). Never retry /refresh —
+  // refresh tokens are single-use and a lost response must end the session.
+  const delays = [2000, 5000]
+  let lastError: unknown = null
+  for (let attempt = 0; attempt <= delays.length; attempt++) {
+    try {
+      const pair = await api.post<TokenPair>('/auth/login', req, { public: true })
+      tokenStore.save(pair.accessToken, pair.refreshToken)
+      return pair
+    } catch (err) {
+      lastError = err
+      const retryable =
+        err instanceof ApiError &&
+        (err.status === 0 || err.status === 502 || err.status === 503 || err.status === 504)
+      if (!retryable || attempt === delays.length) throw err
+      await new Promise((r) => setTimeout(r, delays[attempt]))
+    }
+  }
+  throw lastError
 }
 
 export async function refreshToken(): Promise<TokenPair> {
-  const refreshTokenValue = tokenStore.getRefresh()
-  if (!refreshTokenValue) throw new Error('No refresh token stored')
-  const pair = await api.post<TokenPair>(
-    '/auth/refresh',
-    { refreshToken: refreshTokenValue },
-    { public: true, noAutoRefresh: true },
-  )
-  tokenStore.save(pair.accessToken, pair.refreshToken)
+  // Goes through the shared single-flight refresh: concurrent callers
+  // share one server call, so the single-use token is never sent twice.
+  const pair = await refreshAccessToken()
+  if (!pair) throw new Error('No refresh token stored')
   return pair
 }
 
@@ -53,5 +67,5 @@ export function changePassword(currentPassword: string, newPassword: string): Pr
 }
 
 export function isAuthenticated(): boolean {
-  return !!tokenStore.getAccess()
+  return !!tokenStore.getRefresh() || !!tokenStore.getDemo()
 }

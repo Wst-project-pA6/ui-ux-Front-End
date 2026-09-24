@@ -1,11 +1,12 @@
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom'
+import { useEffect } from 'react'
 import { LanguageProvider } from './i18n/LanguageContext'
 import { RoleProvider, useRole } from './context/RoleContext'
-import { AuthProvider } from './context/AuthContext'
+import { AuthProvider, useAuth } from './context/AuthContext'
+import { isAuthenticated } from './api/auth'
 import { AppShell } from './components/layout/AppShell'
 import Login from './pages/Login'
-import SignUp from './pages/SignUp'
-import ForgotPassword from './pages/ForgotPassword'
+import ChangePasswordPage from './pages/ChangePassword'
 import Dashboard from './pages/Dashboard'
 import Customers from './pages/Customers'
 import Vehicles from './pages/Vehicles'
@@ -22,15 +23,22 @@ import MyJobs from './pages/MyJobs'
 import MyTraining from './pages/MyTraining'
 import InvoicesReports from './pages/InvoicesReports'
 import RoleMatrixPage from './pages/RoleMatrix'
+import Users from './pages/Users'
 
 /**
- * Guards a route so that roles without access are redirected to their homeRoute
- * instead of being able to reach the page by typing the URL directly.
- * The sidebar already hides links per role; this enforces it at route level too.
+ * Guards a route so that unauthenticated users (including after logout or
+ * session expiry, even via the browser Back button) land on Login, and
+ * roles without access are redirected to their homeRoute instead of being
+ * able to reach the page by typing the URL directly.
  */
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { canAccess, config } = useRole()
+  const { loading } = useAuth()
   const location = useLocation()
+  if (loading) return null
+  if (!isAuthenticated()) {
+    return <Navigate to="/" replace state={{ from: location.pathname }} />
+  }
   // For parameterized paths (e.g. /job-cards/JC-2024-0912), check the base segment
   const basePath = '/' + location.pathname.split('/').filter(Boolean)[0]
   if (!canAccess(location.pathname) && !canAccess(basePath)) {
@@ -39,17 +47,44 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   return <>{children}</>
 }
 
+/**
+ * Backend-driven password gate: while the account requires a password
+ * change (new/reset accounts — the backend answers 403
+ * PASSWORD_CHANGE_REQUIRED everywhere else), only the change-password
+ * screen is reachable. Normal logins never land here.
+ */
+function PasswordGate() {
+  const { forcePasswordChange, loading } = useAuth()
+  const location = useLocation()
+  if (loading || !forcePasswordChange) return null
+  if (location.pathname === '/change-password') return null
+  return <Navigate to="/change-password" replace />
+}
+
 export default function App() {
+  // After logout, the browser Back button may restore an authenticated page
+  // from the back-forward cache (frozen DOM, no guard re-evaluation).
+  // Reload only when the session is gone, so logged-in back/forward
+  // navigation keeps working as a normal SPA.
+  useEffect(() => {
+    const onPageShow = (e: PageTransitionEvent) => {
+      if (e.persisted && !isAuthenticated()) window.location.reload()
+    }
+    window.addEventListener('pageshow', onPageShow)
+    return () => window.removeEventListener('pageshow', onPageShow)
+  }, [])
+
   return (
     <LanguageProvider>
       <RoleProvider>
         <AuthProvider>
         <BrowserRouter>
+          <PasswordGate />
           <Routes>
             <Route path="/" element={<Login />} />
-            <Route path="/signup" element={<SignUp />} />
-            <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route path="/change-password" element={<ChangePasswordPage />} />
             <Route element={<AppShell />}>
+              <Route path="/users" element={<ProtectedRoute><Users /></ProtectedRoute>} />
               <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
               <Route path="/customers" element={<ProtectedRoute><Customers /></ProtectedRoute>} />
               <Route path="/vehicles" element={<ProtectedRoute><Vehicles /></ProtectedRoute>} />

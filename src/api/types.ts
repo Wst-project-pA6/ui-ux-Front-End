@@ -303,6 +303,52 @@ export interface HealthStatus {
   version: string
 }
 
+// ── Users / Roles / Scopes (Final v1 — System Administrator only) ─────
+export type UserStatus = 'ACTIVE' | 'DISABLED'
+
+export interface SystemUser extends RecordMeta {
+  email: string
+  displayName: string
+  preferredLocale: Locale
+  status: UserStatus
+  roles: RoleCode[]
+  organizationScopeIds: Uuid[]
+  mustChangePassword: boolean
+  lastLoginAt?: Timestamp
+  studentId?: Uuid
+}
+
+export interface UserCreateRequest {
+  email: string
+  displayName: string
+  preferredLocale: Locale
+  temporaryPassword: string
+}
+
+export interface UserUpdateRequest {
+  displayName?: string
+  preferredLocale?: Locale
+  status?: UserStatus
+  temporaryPassword?: string
+}
+
+export interface RoleInfo {
+  code: RoleCode
+  description: string
+  permissions: string[]
+}
+
+export type OrgScopeType = 'BRANCH' | 'STORE' | 'TRAINING_PROGRAM'
+export type OrgScopeStatus = 'ACTIVE' | 'INACTIVE'
+
+export interface OrgScope {
+  id: Uuid
+  code: string
+  name: string
+  type: OrgScopeType
+  status: OrgScopeStatus
+}
+
 // ── List query (contract collection conventions) ──────────────────────
 export interface ListQuery {
   page?: number

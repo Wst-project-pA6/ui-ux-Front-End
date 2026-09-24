@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useCallback } from 'react'
 
 export type Role =
+  | 'admin'
   | 'manager'
   | 'advisor'
   | 'technician'
@@ -19,6 +20,14 @@ export interface RoleConfig {
 }
 
 export const ROLE_CONFIGS: Record<Role, RoleConfig> = {
+  admin: {
+    label: 'System Administrator',
+    homeRoute: '/users',
+    allowedPaths: ['/users', '/settings'],
+    userName: 'System Admin',
+    userLabel: 'System Administrator',
+    initials: 'SA',
+  },
   manager: {
     label: 'Workshop Manager',
     homeRoute: '/dashboard',
@@ -89,8 +98,6 @@ export const ROLE_CONFIGS: Record<Role, RoleConfig> = {
   },
 }
 
-export const ALL_ROLES = Object.keys(ROLE_CONFIGS) as Role[]
-
 function initials(name: string): string {
   return name
     .trim()
@@ -111,7 +118,7 @@ interface RoleContextValue {
 
 const RoleContext = createContext<RoleContextValue | null>(null)
 
-const VALID_ROLES = new Set<Role>(['manager', 'advisor', 'technician', 'storekeeper', 'supervisor', 'student', 'finance'])
+const VALID_ROLES = new Set<Role>(['admin', 'manager', 'advisor', 'technician', 'storekeeper', 'supervisor', 'student', 'finance'])
 
 export function RoleProvider({ children }: { children: React.ReactNode }) {
   const [role, setRoleState] = useState<Role>(() => {

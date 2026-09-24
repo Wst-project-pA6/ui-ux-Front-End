@@ -49,9 +49,26 @@ export const SERVICE_TYPE_LABELS: Record<ServiceType, string> = {
   OTHER: 'Other',
 }
 
-/** Contract RoleCode -> UI role (UI merges TECHNICIAN+QUALITY_CHECKER, etc.). */
+/** Human-readable names for the 10 contract role codes (Final v1 §10.5). */
+export const ROLE_CODE_LABELS: Record<RoleCode, string> = {
+  SYSTEM_ADMIN: 'System Administrator',
+  WORKSHOP_MANAGER: 'Workshop Manager',
+  SERVICE_ADVISOR: 'Service Advisor',
+  TECHNICIAN: 'Technician',
+  QUALITY_CHECKER: 'Quality Checker',
+  STOREKEEPER_PROCUREMENT: 'Storekeeper / Procurement',
+  MENTOR: 'Mentor',
+  TRAINING_SUPERVISOR: 'Training Supervisor',
+  STUDENT: 'Student',
+  FINANCE_VIEWER_AUDITOR: 'Finance Viewer / Auditor',
+}
+
+export const ALL_ROLE_CODES = Object.keys(ROLE_CODE_LABELS) as RoleCode[]
+
+/** Contract RoleCode -> UI role (SYSTEM_ADMIN has its own admin home). */
 export function roleCodeToUiRole(codes: RoleCode[]): Role {
-  if (codes.includes('SYSTEM_ADMIN') || codes.includes('WORKSHOP_MANAGER')) return 'manager'
+  if (codes.includes('SYSTEM_ADMIN')) return 'admin'
+  if (codes.includes('WORKSHOP_MANAGER')) return 'manager'
   if (codes.includes('SERVICE_ADVISOR')) return 'advisor'
   if (codes.includes('TECHNICIAN') || codes.includes('QUALITY_CHECKER')) return 'technician'
   if (codes.includes('STOREKEEPER_PROCUREMENT')) return 'storekeeper'

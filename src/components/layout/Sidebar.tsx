@@ -1,6 +1,7 @@
 import { NavLink, useNavigate } from 'react-router-dom'
 import { useLang } from '../../i18n/LanguageContext'
 import { useRole } from '../../context/RoleContext'
+import { useAuth } from '../../context/AuthContext'
 import { NAV_ITEMS, filterNavItems } from '../../config/nav'
 
 interface SidebarProps {
@@ -11,8 +12,9 @@ export function Sidebar({ collapsed }: SidebarProps) {
   const navigate = useNavigate()
   const { t, lang, setLang } = useLang()
   const { role, config } = useRole()
+  const { hasPermission } = useAuth()
 
-  const visibleItems = filterNavItems(NAV_ITEMS, role, config.allowedPaths)
+  const visibleItems = filterNavItems(NAV_ITEMS, role, config.allowedPaths, hasPermission)
 
   return (
     <aside

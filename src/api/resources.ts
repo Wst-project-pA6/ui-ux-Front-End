@@ -9,6 +9,7 @@ import type {
   Part, StockBalance, PurchaseOrder,
   Invoice, TrainingSession, DashboardResponse, HealthStatus,
   Assessment,
+  SystemUser, UserCreateRequest, UserUpdateRequest, RoleInfo, OrgScope,
   ListQuery, Page,
 } from './types'
 
@@ -124,6 +125,32 @@ export const certificatesApi = {
   // CERTIFICATE_NOT_ELIGIBLE. Idempotent — safe to retry.
   issue: (body: { studentId: string; courseId: string }, key = newIdempotencyKey()) =>
     api.post('/certificates', body, { idempotencyKey: key }),
+}
+
+// ── Users / Roles / Organization scopes (Final v1, SYSTEM_ADMIN only) ─
+export const usersApi = {
+  // q, role, status (ACTIVE|DISABLED), organizationScopeId, sort; page envelope.
+  list: (q?: ListQuery) => api.get<Page<SystemUser>>('/users', q),
+  create: (body: UserCreateRequest) => api.post<SystemUser>('/users', body),
+  get: (userId: string) => api.get<SystemUser>(`/users/${userId}`),
+  // Send only changed fields. status DISABLED logs the user out everywhere.
+  // temporaryPassword = admin reset (user must change at next sign-in).
+  update: (userId: string, body: UserUpdateRequest) =>
+    api.patch<SystemUser>(`/users/${userId}`, body),
+  // Replaces the whole role list.
+  setRoles: (userId: string, roles: string[]) =>
+    api.put<SystemUser>(`/users/${userId}/roles`, { roles }),
+  // Replaces the whole scope list.
+  setScopes: (userId: string, organizationScopeIds: string[]) =>
+    api.put<SystemUser>(`/users/${userId}/organization-scopes`, { organizationScopeIds }),
+}
+
+export const rolesApi = {
+  list: () => api.get<{ items: RoleInfo[] }>('/roles'),
+}
+
+export const scopesApi = {
+  list: () => api.get<{ items: OrgScope[] }>('/organization-scopes'),
 }
 
 // ── Dashboards (role-scoped; 403 without the dashboard permission) ─────

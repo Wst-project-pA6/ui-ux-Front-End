@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react'
-import { useNavigate, Link } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { Button } from '../components/ui/Button'
 import { Input } from '../components/ui/Input'
 import { useLang } from '../i18n/LanguageContext'
 import { ROLE_CONFIGS } from '../context/RoleContext'
 import { useAuth } from '../context/AuthContext'
+import { ApiError } from '../api/http'
 
 const EyeIcon = ({ open }: { open: boolean }) =>
   open ? (
@@ -36,17 +37,13 @@ const MailIcon = () => (
 
 export default function Login() {
   const navigate = useNavigate()
+  const location = useLocation()
   const { lang, setLang, t } = useLang()
-  const { signIn } = useAuth()
+  const { signIn, sessionMessage } = useAuth()
 
-  const [email, setEmail] = useState(() => {
-    try { return localStorage.getItem('wst-remembered-email') ?? '' } catch { return '' }
-  })
+  const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPw, setShowPw] = useState(false)
-  const [remember, setRemember] = useState(() => {
-    try { return !!localStorage.getItem('wst-remembered-email') } catch { return false }
-  })
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [emailErr, setEmailErr] = useState('')
@@ -72,17 +69,33 @@ export default function Login() {
     setLoading(true)
     setError('')
     try {
-      // Contract: POST /auth/login (public, rate-limited). 401 INVALID_CREDENTIALS
-      // for both unknown user and wrong password. Offline -> demo fallback.
+      // Contract: POST /auth/login (public, rate-limited). 401
+      // INVALID_CREDENTIALS for both unknown user and wrong password.
       const { mustChangePassword, role } = await signIn(email.trim(), password)
-      try {
-        if (remember) localStorage.setItem('wst-remembered-email', email)
-        else localStorage.removeItem('wst-remembered-email')
-      } catch {}
       setPassword('')
-      // mustChangePassword -> force change-password screen (contract WST-FR-01)
-      navigate(mustChangePassword ? '/settings' : ROLE_CONFIGS[role].homeRoute)
+      if (mustChangePassword) {
+        // Backend-gated accounts (new/reset) must change password first.
+        navigate('/change-password', { replace: true })
+        return
+      }
+      const from = (location.state as { from?: string } | null)?.from
+      navigate(from ?? ROLE_CONFIGS[role].homeRoute, { replace: true })
     } catch (err) {
+      if (err instanceof ApiError) {
+        if (err.status === 401) {
+          setError(t('auth.error.wrongCredentials'))
+          return
+        }
+        if (err.status === 429) {
+          const secs = err.retryAfter ?? '?'
+          setError(t('auth.error.rateLimited').replace('{seconds}', String(secs)))
+          return
+        }
+        if (err.status === 400) {
+          setError(err.message)
+          return
+        }
+      }
       setError(err instanceof Error ? err.message : t('auth.error.invalidCredentials'))
     } finally {
       setLoading(false)
@@ -164,6 +177,14 @@ export default function Login() {
             <p className="text-slate-500 text-sm mt-1">{t('login.subheading')}</p>
           </div>
 
+          {sessionMessage && (
+            <div role="status" className="mb-4 px-4 py-3 rounded-lg bg-blue-50 border border-blue-200 text-blue-700 text-sm">
+              {sessionMessage === 'auth.sessionEnded' || sessionMessage === 'auth.passwordChangedLogin'
+                ? t(sessionMessage as never)
+                : sessionMessage}
+            </div>
+          )}
+
           {error && (
             <div role="alert" className="mb-4 px-4 py-3 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm">
               {error}
@@ -206,31 +227,13 @@ export default function Login() {
               }
             />
 
-            <div className="flex items-center justify-between">
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={remember}
-                  onChange={(e) => setRemember(e.target.checked)}
-                  className="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
-                />
-                <span className="text-sm text-slate-600">{t('login.rememberMe')}</span>
-              </label>
-              <Link to="/forgot-password" className="text-sm text-blue-600 hover:text-blue-700 font-medium">
-                {t('login.forgotPassword')}
-              </Link>
-            </div>
-
             <Button type="submit" loading={loading} className="w-full justify-center py-2.5">
               {t('login.signIn')}
             </Button>
           </form>
 
           <p className="mt-6 text-center text-sm text-slate-500">
-            {t('auth.noAccount')}{' '}
-            <Link to="/signup" className="text-blue-600 hover:text-blue-700 font-medium">
-              {t('auth.signUp')}
-            </Link>
+            {t('login.needAccount')}
           </p>
 
           <div className="mt-6 flex items-center justify-center gap-1 border-t border-slate-200 pt-6">

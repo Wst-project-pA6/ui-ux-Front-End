@@ -24,8 +24,8 @@ Source of truth: `WST_OpenAPI_Contract_FROZEN.yaml` (OpenAPI 3.1.0, base path `/
 
 ## Contract rules enforced
 
-- **Auth**: 401 `INVALID_CREDENTIALS` for unknown user and wrong password alike; rotating refresh tokens; `mustChangePassword` → `/settings` Security tab.
-- **No public sign-up / reset**: contract defines neither — SignUp/ForgotPassword are labeled demo-only; production users come from `POST /users` (`users.manage`).
+- **Auth**: 401 `INVALID_CREDENTIALS` for unknown user and wrong password alike; rotating refresh tokens (access in memory, refresh in sessionStorage); `mustChangePassword` → `/change-password` screen (Settings → Security for voluntary changes).
+- **No public sign-up / reset**: the contract defines neither and the UI has no registration screens; production users come from `POST /users` (`users.manage`).
 - **Stages/status**: never `PATCH`ed — job cards use `POST /job-cards/{id}/transitions` with `expectedFromStage`; UI lowercase labels map to `RECEIVED|IN_PROGRESS|QUALITY_CHECK|READY|DELIVERED`.
 - **Concurrency**: updates send `version`; stale → `409 VERSION_CONFLICT` ("refresh and retry").
 - **Money**: `{amount: decimal-string, currency: ISO-4217}` — never floats.

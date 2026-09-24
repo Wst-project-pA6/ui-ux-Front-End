@@ -67,14 +67,16 @@ export function AppShell() {
   const { t, lang, setLang } = useLang()
   const { role, config } = useRole()
   const { signOut } = useAuth()
+  const { hasPermission } = useAuth()
 
   const handleLogout = async () => {
     // Contract: POST /auth/logout revokes the refresh-token family (best-effort).
-    try { await signOut() } finally { navigate('/') }
+    // Replace history so Back never re-exposes authenticated content.
+    try { await signOut() } finally { navigate('/', { replace: true }) }
   }
 
   // Identical filter used by desktop Sidebar (via filterNavItems) and mobile drawer
-  const filteredNavItems = filterNavItems(NAV_ITEMS, role, config.allowedPaths)
+  const filteredNavItems = filterNavItems(NAV_ITEMS, role, config.allowedPaths, hasPermission)
 
   useEffect(() => {
     setDrawerOpen(false)
@@ -271,6 +273,17 @@ export function AppShell() {
               <p className="text-sm font-medium text-slate-700">{config.userName}</p>
               <p className="text-xs text-slate-400 leading-none">{config.userLabel}</p>
             </div>
+            <button
+              onClick={handleLogout}
+              title={t('nav.logout')}
+              aria-label={t('nav.logout')}
+              className="w-8 h-8 flex items-center justify-center rounded-lg text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition-colors"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                <polyline points="16 17 21 12 16 7" /><line x1="21" y1="12" x2="9" y2="12" />
+              </svg>
+            </button>
           </div>
         </header>
 
