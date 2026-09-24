@@ -272,6 +272,25 @@ export interface TrainingSession extends RecordMeta {
   version: number
 }
 
+// ── Assessments (contract: mapAssessment) ───────────────────────────────
+export type AssessmentResult = 'PASS' | 'FAIL' | 'NEEDS_IMPROVEMENT'
+export type AssessmentSignOffStatus = 'PENDING' | 'SIGNED_OFF' | 'RETURNED'
+
+export interface Assessment extends RecordMeta {
+  sessionId: Uuid
+  studentId: Uuid
+  taskId: Uuid
+  courseId: Uuid
+  result: AssessmentResult
+  timeOnTaskMinutes: number
+  mentorNote?: string
+  assessedBy: Uuid
+  assessedAt: Timestamp
+  signOffStatus: AssessmentSignOffStatus
+  countsTowardCompletion: boolean
+  version: number
+}
+
 // ── Dashboards / Health ───────────────────────────────────────────────
 export interface DashboardResponse {
   generatedAt: Timestamp

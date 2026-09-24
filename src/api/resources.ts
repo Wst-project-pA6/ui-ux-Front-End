@@ -8,6 +8,7 @@ import type {
   JobCard, JobCardCreateRequest, JobCardUpdateRequest, JobTransitionRequest,
   Part, StockBalance, PurchaseOrder,
   Invoice, TrainingSession, DashboardResponse, HealthStatus,
+  Assessment,
   ListQuery, Page,
 } from './types'
 
@@ -108,6 +109,10 @@ export const trainingApi = {
 
 // ── Assessments & certificates ────────────────────────────────────────
 export const assessmentsApi = {
+  // GET /assessments is permission-scoped server-side: a student actor is
+  // automatically restricted to their own studentId (students.self), while
+  // training.read sees the full list. Same endpoint, different data.
+  list: (q?: ListQuery) => api.get<Page<Assessment>>('/assessments', q),
   // Supervisor sign-off: unsigned results stay pending and cannot count
   // toward certification (WST-FR-11). Locked/revoked -> 409/422.
   signOff: (assessmentId: string, body: { decision: 'SIGNED' | 'REJECTED'; note?: string }) =>
