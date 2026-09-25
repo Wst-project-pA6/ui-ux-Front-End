@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { LanguageProvider } from './i18n/LanguageContext'
 import { useAuth } from './context/AuthContext'
+import { tokenStorage } from './api/tokenStorage'
 import { canAccessPath, homeForPermissions } from './auth/access'
 import { AppShell } from './components/layout/AppShell'
 import Login from './pages/Login'
@@ -27,6 +28,8 @@ import OperatingHours from './pages/OperatingHours'
 import Notifications from './pages/Notifications'
 import AuditLog from './pages/AuditLog'
 import Invoices from './pages/Invoices'
+import Certificates from './pages/Certificates'
+import VerifyCertificate from './pages/VerifyCertificate'
 
 function BootSplash() {
   return (
@@ -74,6 +77,8 @@ export default function App() {
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<LoginRoot />} />
+          {/* Public — certificate verification needs no login. */}
+          <Route path="/verify/:token" element={<VerifyCertificate />} />
           <Route
             path="/change-password"
             element={
@@ -108,6 +113,7 @@ export default function App() {
             <Route path="/operating-hours" element={<ProtectedRoute><OperatingHours /></ProtectedRoute>} />
             <Route path="/notifications" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
             <Route path="/audit-log" element={<ProtectedRoute><AuditLog /></ProtectedRoute>} />
+            <Route path="/certificates" element={<ProtectedRoute><Certificates /></ProtectedRoute>} />
           </Route>
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
@@ -121,8 +127,12 @@ export default function App() {
  * is forced; without any session it redirects to login.
  */
 function PasswordRoute({ children }: { children: React.ReactNode }) {
-  const { me, bootstrapping } = useAuth()
+  const { me, bootstrapping, mustChangePassword } = useAuth()
   if (bootstrapping) return <BootSplash />
-  if (!me) return <Navigate to="/" replace />
+  // In the forced flow /auth/me is unreachable (403) so `me` is null —
+  // the stored session is the proof of authentication.
+  if (!me && !mustChangePassword && !tokenStorage.hasSession()) {
+    return <Navigate to="/" replace />
+  }
   return <>{children}</>
 }

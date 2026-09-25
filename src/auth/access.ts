@@ -29,13 +29,14 @@ export const ROUTE_PERMISSIONS: Record<string, string[]> = {
   '/notifications': [],
   '/audit-log': ['audit.read'],
   '/settings': ['users.read', 'config.read', 'config.manage'],
-  // Not final — mock screens with Demo badge, open to any signed-in user.
-  '/training': [],
-  '/my-training': [],
-  '/assessments': [],
-  '/competencies': [],
-  '/reports': [],
-  '/ai-insights': [],
+  // Training / insights — final in v6.
+  '/training': ['training.read'],
+  '/my-training': ['students.self', 'training.read'],
+  '/assessments': ['training.read', 'students.self', 'training.assess', 'training.signoff'],
+  '/competencies': ['training.read'],
+  '/certificates': ['training.read', 'students.self'],
+  '/reports': ['exports.read', 'exports.create'],
+  '/ai-insights': ['predictions.reorder.read', 'predictions.risk.read', 'dashboards.ai-data'],
   '/role-matrix': [],
   '/change-password': [],
 }
@@ -72,6 +73,8 @@ export function homeForPermissions(permissions: string[]): string {
   if (permissions.includes('invoices.read')) return '/invoices'
   if (permissions.includes('audit.read')) return '/audit-log'
   if (permissions.includes('users.read') || permissions.includes('config.read')) return '/settings'
+  if (permissions.includes('training.read')) return '/training'
+  if (permissions.includes('students.self')) return '/my-training'
   return '/dashboard'
 }
 
@@ -95,6 +98,7 @@ export const NAV_ORDER: string[] = [
   '/my-training',
   '/assessments',
   '/competencies',
+  '/certificates',
   '/reports',
   '/ai-insights',
   '/role-matrix',

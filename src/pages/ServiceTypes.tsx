@@ -17,7 +17,7 @@ const PAGE_SIZE = 20
 type ServiceStatus = 'ACTIVE' | 'INACTIVE'
 
 export default function ServiceTypes() {
-  const { t } = useLang()
+  const { t, lang } = useLang()
   const { showToast } = useToast()
   const { hasPermission } = useAuth()
 
@@ -32,7 +32,7 @@ export default function ServiceTypes() {
 
   const [modalOpen, setModalOpen] = useState(false)
   const [editing, setEditing] = useState<ServiceType | null>(null)
-  const [form, setForm] = useState({ code: '', name: '', laborHourlyRate: '', status: 'ACTIVE' as ServiceStatus })
+  const [form, setForm] = useState({ code: '', name: '', nameAr: '', laborHourlyRate: '', status: 'ACTIVE' as ServiceStatus })
   const [formErrors, setFormErrors] = useState<Record<string, string>>({})
   const [saving, setSaving] = useState(false)
   const [saveError, setSaveError] = useState<unknown>(null)
@@ -75,7 +75,7 @@ export default function ServiceTypes() {
 
   const openAdd = () => {
     setEditing(null)
-    setForm({ code: '', name: '', laborHourlyRate: '', status: 'ACTIVE' })
+    setForm({ code: '', name: '', nameAr: '', laborHourlyRate: '', status: 'ACTIVE' })
     setFormErrors({})
     setSaveError(null)
     setModalOpen(true)
@@ -86,6 +86,7 @@ export default function ServiceTypes() {
     setForm({
       code: st.code ?? '',
       name: st.name ?? '',
+      nameAr: st.nameAr ?? '',
       laborHourlyRate: st.laborHourlyRate ?? '',
       status: (st.status as ServiceStatus | undefined) ?? 'ACTIVE',
     })
@@ -100,6 +101,9 @@ export default function ServiceTypes() {
       next.code = 'Code: 1–20 chars, uppercase letters/digits/_/- only.'
     }
     if (!form.name.trim()) next.name = 'Name is required.'
+    if (form.nameAr.trim() !== '' && (form.nameAr.trim().length < 1 || form.nameAr.trim().length > 120)) {
+      next.nameAr = 'Arabic name must be 1–120 characters.'
+    }
     if (!editing) {
       const rate = Number(form.laborHourlyRate)
       if (form.laborHourlyRate.trim() === '' || Number.isNaN(rate) || rate < 0) {
@@ -120,6 +124,7 @@ export default function ServiceTypes() {
       setForm((f) => ({
         ...f,
         name: fresh.name ?? f.name,
+        nameAr: fresh.nameAr ?? f.nameAr,
         laborHourlyRate: fresh.laborHourlyRate ?? f.laborHourlyRate,
         status: (fresh.status as ServiceStatus | undefined) ?? f.status,
       }))
@@ -140,13 +145,14 @@ export default function ServiceTypes() {
           setSaving(false)
           return
         }
-        const payload: { version: number; name?: string; laborHourlyRate?: number; status?: ServiceStatus } = {
+        const payload: { version: number; name?: string; nameAr?: string; laborHourlyRate?: number; status?: ServiceStatus } = {
           version: editing.version,
         }
         if (form.name.trim() !== (editing.name ?? '')) payload.name = form.name.trim()
+        if (form.nameAr.trim() !== (editing.nameAr ?? '')) payload.nameAr = form.nameAr.trim()
         if (form.laborHourlyRate.trim() !== (editing.laborHourlyRate ?? '')) payload.laborHourlyRate = Number(form.laborHourlyRate)
         if (form.status !== editing.status) payload.status = form.status
-        if (payload.name === undefined && payload.laborHourlyRate === undefined && payload.status === undefined) {
+        if (payload.name === undefined && payload.nameAr === undefined && payload.laborHourlyRate === undefined && payload.status === undefined) {
           setSaveError(new ApiError({ message: 'Nothing to change — edit at least one field.', code: 'BAD_REQUEST', status: 400 }))
           setSaving(false)
           return
@@ -159,6 +165,7 @@ export default function ServiceTypes() {
         const created = await serviceTypesV3.create({
           code: form.code.trim(),
           name: form.name.trim(),
+          ...(form.nameAr.trim() ? { nameAr: form.nameAr.trim() } : {}),
           laborHourlyRate: Number(form.laborHourlyRate),
         })
         showToast('success', 'Service type created', created.name)
@@ -234,7 +241,7 @@ export default function ServiceTypes() {
                   {items.map((st) => (
                     <tr key={st.id} className="border-b border-slate-50 last:border-0 hover:bg-slate-50">
                       <td className="px-6 py-4 font-mono text-slate-900" dir="ltr">{st.code}</td>
-                      <td className="px-6 py-4 text-slate-700">{st.name}</td>
+                      <td className="px-6 py-4 text-slate-700">{lang === 'ar' ? (st.nameAr || st.name) : st.name}</td>
                       {showRate && (
                         <td className="px-6 py-4 text-slate-600" dir="ltr">
                           {st.laborHourlyRate != null
@@ -260,7 +267,7 @@ export default function ServiceTypes() {
               {items.map((st) => (
                 <div key={st.id} className="px-4 py-3">
                   <div className="flex items-center justify-between gap-2">
-                    <p className="font-medium text-slate-900">{st.name}</p>
+                    <p className="font-medium text-slate-900">{lang === 'ar' ? (st.nameAr || st.name) : st.name}</p>
                     <Badge variant={st.status === 'ACTIVE' ? 'active' : 'inactive'} label={st.status} />
                   </div>
                   <p className="text-xs text-slate-400 font-mono" dir="ltr">{st.code}</p>
@@ -323,6 +330,14 @@ export default function ServiceTypes() {
             placeholder="Repair"
             required
             error={formErrors.name}
+          />
+          <Input
+            label="Arabic name (optional)"
+            value={form.nameAr}
+            onChange={(e) => setField('nameAr', e.target.value)}
+            placeholder="إصلاح"
+            error={formErrors.nameAr}
+            hint="1–120 characters when set."
           />
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Input

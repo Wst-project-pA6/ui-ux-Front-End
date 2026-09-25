@@ -4,7 +4,7 @@ interface PageHeaderProps {
   title: string
   subtitle?: string
   actions?: React.ReactNode
-  /** e.g. <DemoBadge /> for screens whose backend API is not final yet. */
+  /** Optional adornment next to the title. */
   badge?: React.ReactNode
   breadcrumbs?: { label: string; href?: string }[]
 }

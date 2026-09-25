@@ -1922,6 +1922,1049 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/training-terms": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description **Allowed roles:** MENTOR, TRAINING_SUPERVISOR
+         *
+         *     **Permissions (any of):** `training.read`
+         */
+        get: operations["TrainingTermsController_list"];
+        put?: never;
+        /**
+         * @description **Allowed roles:** TRAINING_SUPERVISOR
+         *
+         *     **Permissions (any of):** `training.manage`
+         */
+        post: operations["TrainingTermsController_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/training-terms/{termId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * @description **Allowed roles:** TRAINING_SUPERVISOR
+         *
+         *     **Permissions (any of):** `training.manage`
+         */
+        patch: operations["TrainingTermsController_update"];
+        trace?: never;
+    };
+    "/api/v1/courses": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description **Allowed roles:** MENTOR, STUDENT, TRAINING_SUPERVISOR
+         *
+         *     **Permissions (any of):** `training.read`, `students.self`
+         */
+        get: operations["CoursesController_list"];
+        put?: never;
+        /**
+         * @description **Allowed roles:** TRAINING_SUPERVISOR
+         *
+         *     **Permissions (any of):** `training.manage`
+         */
+        post: operations["CoursesController_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/courses/{courseId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * @description **Allowed roles:** TRAINING_SUPERVISOR
+         *
+         *     **Permissions (any of):** `training.manage`
+         */
+        patch: operations["CoursesController_update"];
+        trace?: never;
+    };
+    "/api/v1/mentors": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description **Allowed roles:** MENTOR, TRAINING_SUPERVISOR
+         *
+         *     **Permissions (any of):** `training.read`
+         */
+        get: operations["MentorsController_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/mentor-profiles": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description **Allowed roles:** TRAINING_SUPERVISOR
+         *
+         *     **Permissions (any of):** `training.manage`
+         */
+        get: operations["MentorProfilesController_list"];
+        put?: never;
+        /**
+         * @description **Allowed roles:** TRAINING_SUPERVISOR
+         *
+         *     **Permissions (any of):** `training.manage`
+         */
+        post: operations["MentorProfilesController_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/mentor-profiles/{mentorProfileId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description **Allowed roles:** TRAINING_SUPERVISOR
+         *
+         *     **Permissions (any of):** `training.manage`
+         */
+        get: operations["MentorProfilesController_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * @description **Allowed roles:** TRAINING_SUPERVISOR
+         *
+         *     **Permissions (any of):** `training.manage`
+         */
+        patch: operations["MentorProfilesController_update"];
+        trace?: never;
+    };
+    "/api/v1/students": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description **Allowed roles:** MENTOR, TRAINING_SUPERVISOR
+         *
+         *     **Permissions (any of):** `training.read`
+         */
+        get: operations["StudentsController_list"];
+        put?: never;
+        /**
+         * @description **Allowed roles:** TRAINING_SUPERVISOR
+         *
+         *     **Permissions (any of):** `training.manage`
+         */
+        post: operations["StudentsController_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/students/{studentId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description **Allowed roles:** MENTOR, STUDENT, TRAINING_SUPERVISOR
+         *
+         *     **Permissions (any of):** `training.read`, `students.self`
+         */
+        get: operations["StudentsController_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * @description **Allowed roles:** TRAINING_SUPERVISOR
+         *
+         *     **Permissions (any of):** `training.manage`
+         */
+        patch: operations["StudentsController_update"];
+        trace?: never;
+    };
+    "/api/v1/training-groups": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description **Allowed roles:** MENTOR, TRAINING_SUPERVISOR
+         *
+         *     **Permissions (any of):** `training.read`
+         */
+        get: operations["TrainingGroupsController_list"];
+        put?: never;
+        /**
+         * @description **Allowed roles:** TRAINING_SUPERVISOR
+         *
+         *     **Permissions (any of):** `training.manage`
+         */
+        post: operations["TrainingGroupsController_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/training-groups/{groupId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * @description **Allowed roles:** TRAINING_SUPERVISOR
+         *
+         *     **Permissions (any of):** `training.manage`
+         */
+        patch: operations["TrainingGroupsController_update"];
+        trace?: never;
+    };
+    "/api/v1/training-groups/{groupId}/enrollments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description **Allowed roles:** MENTOR, TRAINING_SUPERVISOR
+         *
+         *     **Permissions (any of):** `training.read`
+         */
+        get: operations["EnrollmentsController_list"];
+        put?: never;
+        /**
+         * @description **Allowed roles:** TRAINING_SUPERVISOR
+         *
+         *     **Permissions (any of):** `training.manage`
+         */
+        post: operations["EnrollmentsController_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/enrollments/{enrollmentId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * @description **Allowed roles:** TRAINING_SUPERVISOR
+         *
+         *     **Permissions (any of):** `training.manage`
+         */
+        patch: operations["EnrollmentsController_withdraw"];
+        trace?: never;
+    };
+    "/api/v1/training-sessions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description **Allowed roles:** MENTOR, STUDENT, TRAINING_SUPERVISOR
+         *
+         *     **Permissions (any of):** `training.read`, `students.self`
+         */
+        get: operations["TrainingSessionsController_list"];
+        put?: never;
+        /**
+         * @description **Allowed roles:** TRAINING_SUPERVISOR
+         *
+         *     **Permissions (any of):** `training.manage`
+         */
+        post: operations["TrainingSessionsController_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/training-sessions/{sessionId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description **Allowed roles:** MENTOR, STUDENT, TRAINING_SUPERVISOR
+         *
+         *     **Permissions (any of):** `training.read`, `students.self`
+         */
+        get: operations["TrainingSessionsController_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * @description **Allowed roles:** TRAINING_SUPERVISOR
+         *
+         *     **Permissions (any of):** `training.manage`
+         */
+        patch: operations["TrainingSessionsController_update"];
+        trace?: never;
+    };
+    "/api/v1/training-sessions/{sessionId}/conflict-check": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * @description **Allowed roles:** TRAINING_SUPERVISOR, WORKSHOP_MANAGER
+         *
+         *     **Permissions (any of):** `training.manage`, `schedule.override-conflict`
+         */
+        post: operations["TrainingSessionsController_checkConflicts"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/training-sessions/{sessionId}/conflict-overrides": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * @description **Allowed roles:** WORKSHOP_MANAGER
+         *
+         *     **Permissions (any of):** `schedule.override-conflict`
+         */
+        post: operations["TrainingSessionsController_createOverrides"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/training-sessions/{sessionId}/transitions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * @description **Allowed roles:** TRAINING_SUPERVISOR
+         *
+         *     **Permissions (any of):** `training.publish`, `training.manage`
+         */
+        post: operations["TrainingSessionsController_transition"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/training-sessions/{sessionId}/attendance": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * @description **Allowed roles:** MENTOR
+         *
+         *     **Permissions (any of):** `training.attendance.record`
+         */
+        put: operations["AttendanceController_record"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/attendance-records": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description **Allowed roles:** MENTOR, STUDENT, TRAINING_SUPERVISOR
+         *
+         *     **Permissions (any of):** `training.read`, `students.self`
+         */
+        get: operations["AttendanceController_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/practical-tasks": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description **Allowed roles:** MENTOR, TRAINING_SUPERVISOR
+         *
+         *     **Permissions (any of):** `training.read`
+         */
+        get: operations["PracticalTasksController_list"];
+        put?: never;
+        /**
+         * @description **Allowed roles:** TRAINING_SUPERVISOR
+         *
+         *     **Permissions (any of):** `training.manage`
+         */
+        post: operations["PracticalTasksController_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/practical-tasks/{taskId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * @description **Allowed roles:** TRAINING_SUPERVISOR
+         *
+         *     **Permissions (any of):** `training.manage`
+         */
+        patch: operations["PracticalTasksController_update"];
+        trace?: never;
+    };
+    "/api/v1/assessments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description **Allowed roles:** MENTOR, STUDENT, TRAINING_SUPERVISOR
+         *
+         *     **Permissions (any of):** `training.read`, `students.self`
+         */
+        get: operations["AssessmentsController_list"];
+        put?: never;
+        /**
+         * @description **Allowed roles:** MENTOR
+         *
+         *     **Permissions (any of):** `training.assess`
+         */
+        post: operations["AssessmentsController_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/assessments/{assessmentId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * @description **Allowed roles:** MENTOR
+         *
+         *     **Permissions (any of):** `training.assess`
+         */
+        patch: operations["AssessmentsController_update"];
+        trace?: never;
+    };
+    "/api/v1/assessments/{assessmentId}/sign-off": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * @description **Allowed roles:** TRAINING_SUPERVISOR
+         *
+         *     **Permissions (any of):** `training.signoff`
+         */
+        post: operations["AssessmentsController_signOff"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/competencies": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description **Allowed roles:** MENTOR, TRAINING_SUPERVISOR
+         *
+         *     **Permissions (any of):** `training.read`
+         */
+        get: operations["CompetenciesController_list"];
+        put?: never;
+        /**
+         * @description **Allowed roles:** TRAINING_SUPERVISOR
+         *
+         *     **Permissions (any of):** `training.manage`
+         */
+        post: operations["CompetenciesController_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/competencies/{competencyId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * @description **Allowed roles:** TRAINING_SUPERVISOR
+         *
+         *     **Permissions (any of):** `training.manage`
+         */
+        patch: operations["CompetenciesController_update"];
+        trace?: never;
+    };
+    "/api/v1/students/{studentId}/competency-coverage": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description **Allowed roles:** MENTOR, STUDENT, TRAINING_SUPERVISOR
+         *
+         *     **Permissions (any of):** `training.read`, `students.self`
+         */
+        get: operations["StudentProgressController_getCoverage"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/students/{studentId}/completion-eligibility": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description **Allowed roles:** MENTOR, STUDENT, TRAINING_SUPERVISOR
+         *
+         *     **Permissions (any of):** `training.read`, `students.self`
+         */
+        get: operations["StudentProgressController_getEligibility"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/dashboards/workshop": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description **Allowed roles:** WORKSHOP_MANAGER
+         *
+         *     **Permissions (any of):** `dashboards.workshop`
+         */
+        get: operations["DashboardsController_getWorkshop"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/dashboards/inventory-finance": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description **Allowed roles:** FINANCE_VIEWER_AUDITOR, STOREKEEPER_PROCUREMENT, WORKSHOP_MANAGER
+         *
+         *     **Permissions (any of):** `dashboards.inventory-finance`
+         */
+        get: operations["DashboardsController_getInventoryFinance"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/dashboards/training": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description **Allowed roles:** MENTOR, TRAINING_SUPERVISOR
+         *
+         *     **Permissions (any of):** `dashboards.training`
+         */
+        get: operations["DashboardsController_getTraining"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/dashboards/ai-data": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description **Allowed roles:** STOREKEEPER_PROCUREMENT, TRAINING_SUPERVISOR, WORKSHOP_MANAGER
+         *
+         *     **Permissions (any of):** `dashboards.ai-data`
+         */
+        get: operations["DashboardsController_getAiData"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/exports": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description **Allowed roles:** FINANCE_VIEWER_AUDITOR, MENTOR, STOREKEEPER_PROCUREMENT, TRAINING_SUPERVISOR, WORKSHOP_MANAGER
+         *
+         *     **Permissions (any of):** `exports.read`
+         */
+        get: operations["ExportsController_list"];
+        put?: never;
+        /**
+         * @description **Allowed roles:** FINANCE_VIEWER_AUDITOR, MENTOR, STOREKEEPER_PROCUREMENT, TRAINING_SUPERVISOR, WORKSHOP_MANAGER
+         *
+         *     **Permissions (any of):** `exports.create`
+         */
+        post: operations["ExportsController_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/exports/{exportJobId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description **Allowed roles:** FINANCE_VIEWER_AUDITOR, MENTOR, STOREKEEPER_PROCUREMENT, TRAINING_SUPERVISOR, WORKSHOP_MANAGER
+         *
+         *     **Permissions (any of):** `exports.read`
+         */
+        get: operations["ExportsController_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/exports/{exportJobId}/download-authorizations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * @description **Allowed roles:** FINANCE_VIEWER_AUDITOR, MENTOR, STOREKEEPER_PROCUREMENT, TRAINING_SUPERVISOR, WORKSHOP_MANAGER
+         *
+         *     **Permissions (any of):** `exports.read`
+         */
+        post: operations["ExportsController_authorizeDownload"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/exports/downloads/{authorizationId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The actual content behind a DownloadAuthorization.url — an internal signed-delivery route,
+         *     not part of the frozen OpenAPI paths, following the exact same pattern as
+         *     AttachmentsController.download.
+         * @description **Access:** any signed-in user.
+         */
+        get: operations["ExportsController_download"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/certificates": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description **Allowed roles:** MENTOR, STUDENT, TRAINING_SUPERVISOR
+         *
+         *     **Permissions (any of):** `training.read`, `students.self`
+         */
+        get: operations["CertificatesController_list"];
+        put?: never;
+        /**
+         * @description **Allowed roles:** TRAINING_SUPERVISOR
+         *
+         *     **Permissions (any of):** `certificates.issue`
+         */
+        post: operations["CertificatesController_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/certificates/{certificateId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description **Allowed roles:** MENTOR, STUDENT, TRAINING_SUPERVISOR
+         *
+         *     **Permissions (any of):** `training.read`, `students.self`
+         */
+        get: operations["CertificatesController_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/certificates/{certificateId}/revocations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * @description **Allowed roles:** TRAINING_SUPERVISOR
+         *
+         *     **Permissions (any of):** `certificates.revoke`
+         */
+        post: operations["CertificatesController_revoke"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/public/certificate-verifications/{verificationToken}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description **Access:** public — no sign-in needed. */
+        get: operations["PublicCertificateVerificationController_verify"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/config/prediction-settings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description **Allowed roles:** SYSTEM_ADMIN
+         *
+         *     **Permissions (any of):** `config.read`
+         */
+        get: operations["PredictionSettingsController_get"];
+        /**
+         * @description **Allowed roles:** SYSTEM_ADMIN
+         *
+         *     **Permissions (any of):** `config.manage`
+         */
+        put: operations["PredictionSettingsController_replace"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/predictions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description **Allowed roles:** MENTOR, STOREKEEPER_PROCUREMENT, TRAINING_SUPERVISOR, WORKSHOP_MANAGER
+         *
+         *     **Permissions (any of):** `predictions.reorder.read`, `predictions.risk.read`
+         */
+        get: operations["PredictionsController_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/predictions/{predictionId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description **Allowed roles:** MENTOR, STOREKEEPER_PROCUREMENT, TRAINING_SUPERVISOR, WORKSHOP_MANAGER
+         *
+         *     **Permissions (any of):** `predictions.reorder.read`, `predictions.risk.read`
+         */
+        get: operations["PredictionsController_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/predictions/{predictionId}/decisions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * @description **Allowed roles:** STOREKEEPER_PROCUREMENT, TRAINING_SUPERVISOR
+         *
+         *     **Permissions (any of):** `predictions.reorder.decide`, `predictions.risk.decide`
+         */
+        post: operations["PredictionsController_decide"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/prediction-runs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * @description **Allowed roles:** STOREKEEPER_PROCUREMENT, TRAINING_SUPERVISOR
+         *
+         *     **Permissions (any of):** `predictions.reorder.decide`, `predictions.risk.decide`
+         */
+        post: operations["PredictionRunsController_run"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/technician-profiles": {
         parameters: {
             query?: never;
@@ -2681,6 +3724,8 @@ export interface components {
             id: string;
             code: string;
             name: string;
+            /** @description Arabic name (WST-FR-02). Omitted when not set. */
+            nameAr?: string;
             /** @description Only for a caller holding service-types.manage. */
             laborHourlyRate?: string;
             /** @enum {string} */
@@ -2703,11 +3748,13 @@ export interface components {
         CreateServiceTypeDto: {
             code: string;
             name: string;
+            nameAr?: string;
             laborHourlyRate: number;
         };
         UpdateServiceTypeDto: {
             version: number;
             name?: string;
+            nameAr?: string;
             laborHourlyRate?: number;
             /** @enum {string} */
             status?: "ACTIVE" | "INACTIVE";
@@ -2873,7 +3920,6 @@ export interface components {
             ownerId?: string;
         };
         DownloadAuthorizationResponseDto: {
-            /** @description Short-lived signed URL, bound to the caller. GET it with the same Bearer token to receive the file bytes. */
             url: string;
             expiresAt: string;
         };
@@ -3446,6 +4492,757 @@ export interface components {
         DataQualitySettingsUpdateDto: {
             version: number;
             lateGracePeriodMinutes: number;
+        };
+        TrainingTermResponseDto: {
+            id: string;
+            organizationScopeId: string;
+            name: string;
+            /** @description Date only (YYYY-MM-DD). */
+            startDate: string;
+            /** @description Date only (YYYY-MM-DD). */
+            endDate: string;
+            /** @enum {string} */
+            status: "PLANNED" | "ACTIVE" | "CLOSED";
+            createdAt: string;
+            updatedAt: string;
+            createdBy?: string;
+            updatedBy?: string;
+        };
+        TrainingTermListResponseDto: {
+            items: components["schemas"]["TrainingTermResponseDto"][];
+            page: components["schemas"]["PageMetaDto"];
+        };
+        CreateTrainingTermDto: {
+            /** Format: uuid */
+            organizationScopeId: string;
+            name: string;
+            startDate: string;
+            endDate: string;
+        };
+        UpdateTrainingTermDto: {
+            name?: string;
+            startDate?: string;
+            endDate?: string;
+            /** @enum {string} */
+            status?: "PLANNED" | "ACTIVE" | "CLOSED";
+        };
+        CourseTaskDto: {
+            /** Format: uuid */
+            taskId: string;
+            required: boolean;
+        };
+        CourseResponseDto: {
+            id: string;
+            organizationScopeId: string;
+            code: string;
+            name: components["schemas"]["LocalizedNameDto"];
+            termId: string;
+            description?: string;
+            /** @description Required and optional practical tasks mapped to this course (UC-14A, D31). */
+            tasks: components["schemas"]["CourseTaskDto"][];
+            minimumAttendancePercent: number;
+            /** @enum {string} */
+            status: "DRAFT" | "ACTIVE" | "ARCHIVED";
+            createdAt: string;
+            updatedAt: string;
+            createdBy?: string;
+            updatedBy?: string;
+        };
+        CourseListResponseDto: {
+            items: components["schemas"]["CourseResponseDto"][];
+            page: components["schemas"]["PageMetaDto"];
+        };
+        CreateCourseDto: {
+            /** Format: uuid */
+            organizationScopeId: string;
+            code: string;
+            name: components["schemas"]["LocalizedNameDto"];
+            /** Format: uuid */
+            termId: string;
+            description?: string;
+            tasks: components["schemas"]["CourseTaskDto"][];
+            minimumAttendancePercent: number;
+        };
+        UpdateCourseDto: {
+            name?: components["schemas"]["LocalizedNameDto"];
+            description?: string;
+            tasks?: components["schemas"]["CourseTaskDto"][];
+            minimumAttendancePercent?: number;
+            /** @enum {string} */
+            status?: "DRAFT" | "ACTIVE" | "ARCHIVED";
+        };
+        MentorResponseDto: {
+            id: string;
+            displayName: string;
+        };
+        MentorListResponseDto: {
+            items: components["schemas"]["MentorResponseDto"][];
+            page: components["schemas"]["PageMetaDto"];
+        };
+        MentorProfileResponseDto: {
+            id: string;
+            displayName: string;
+            userId?: string;
+            /** @enum {string} */
+            status: "ACTIVE" | "INACTIVE";
+            version: number;
+            createdAt: string;
+            updatedAt: string;
+            createdBy?: string;
+            updatedBy?: string;
+        };
+        MentorProfileListResponseDto: {
+            items: components["schemas"]["MentorProfileResponseDto"][];
+            page: components["schemas"]["PageMetaDto"];
+        };
+        CreateMentorProfileDto: {
+            displayName: string;
+            /** Format: uuid */
+            userId?: string;
+        };
+        UpdateMentorProfileDto: {
+            version: number;
+            displayName?: string;
+            /**
+             * Format: uuid
+             * @description A UUID to link an account, or null to unlink the currently linked account.
+             */
+            userId?: string | null;
+            /** @enum {string} */
+            status?: "ACTIVE" | "INACTIVE";
+        };
+        StudentResponseDto: {
+            id: string;
+            userId: string;
+            studentNumber: string;
+            displayName: string;
+            /** @enum {string} */
+            status: "ACTIVE" | "INACTIVE";
+            createdAt: string;
+            updatedAt: string;
+            createdBy?: string;
+            updatedBy?: string;
+        };
+        StudentListResponseDto: {
+            items: components["schemas"]["StudentResponseDto"][];
+            page: components["schemas"]["PageMetaDto"];
+        };
+        CreateStudentDto: {
+            /** Format: uuid */
+            userId: string;
+            studentNumber: string;
+        };
+        UpdateStudentDto: {
+            studentNumber?: string;
+            /** @enum {string} */
+            status?: "ACTIVE" | "INACTIVE";
+        };
+        TrainingGroupResponseDto: {
+            id: string;
+            name: string;
+            courseId: string;
+            /** @enum {string} */
+            status: "ACTIVE" | "CLOSED";
+            enrolledCount: number;
+            createdAt: string;
+            updatedAt: string;
+            createdBy?: string;
+            updatedBy?: string;
+        };
+        TrainingGroupListResponseDto: {
+            items: components["schemas"]["TrainingGroupResponseDto"][];
+            page: components["schemas"]["PageMetaDto"];
+        };
+        CreateTrainingGroupDto: {
+            name: string;
+            /** Format: uuid */
+            courseId: string;
+        };
+        UpdateTrainingGroupDto: {
+            name?: string;
+            /** @enum {string} */
+            status?: "ACTIVE" | "CLOSED";
+        };
+        EnrollmentResponseDto: {
+            id: string;
+            groupId: string;
+            courseId: string;
+            studentId: string;
+            /** @enum {string} */
+            status: "ACTIVE" | "WITHDRAWN" | "COMPLETED";
+            enrolledAt: string;
+            withdrawnAt?: string;
+            withdrawalReason?: string;
+            createdAt: string;
+            updatedAt: string;
+            createdBy?: string;
+            updatedBy?: string;
+        };
+        EnrollmentListResponseDto: {
+            items: components["schemas"]["EnrollmentResponseDto"][];
+            page: components["schemas"]["PageMetaDto"];
+        };
+        CreateEnrollmentDto: {
+            /** Format: uuid */
+            studentId: string;
+        };
+        UpdateEnrollmentDto: {
+            /** @enum {string} */
+            status: "WITHDRAWN";
+            reason: string;
+        };
+        TrainingSessionResponseDto: {
+            id: string;
+            title: string;
+            courseId: string;
+            groupIds: string[];
+            taskIds: string[];
+            bayId: string;
+            mentorId: string;
+            /** @description D42: the maximum number of students this session can hold, set by the Training Supervisor — independent of the bay's own physical capacity. */
+            capacity: number;
+            /** @description Combined ACTIVE students of every assigned group (a student in two groups counts once). */
+            assignedStudentCount: number;
+            startsAt: string;
+            endsAt: string;
+            /** @enum {string} */
+            status: "DRAFT" | "PUBLISHED" | "COMPLETED" | "CANCELLED";
+            cancellationReason?: string;
+            activeConflictOverrideCount: number;
+            version: number;
+            createdAt: string;
+            updatedAt: string;
+            createdBy?: string;
+            updatedBy?: string;
+        };
+        TrainingSessionListResponseDto: {
+            items: components["schemas"]["TrainingSessionResponseDto"][];
+            page: components["schemas"]["PageMetaDto"];
+        };
+        CreateTrainingSessionDto: {
+            title: string;
+            /** Format: uuid */
+            courseId: string;
+            groupIds: string[];
+            taskIds?: string[];
+            /** Format: uuid */
+            bayId: string;
+            /** Format: uuid */
+            mentorId: string;
+            capacity: number;
+            startsAt: string;
+            endsAt: string;
+        };
+        UpdateTrainingSessionDto: {
+            version: number;
+            title?: string;
+            groupIds?: string[];
+            taskIds?: string[];
+            /** Format: uuid */
+            bayId?: string;
+            /** Format: uuid */
+            mentorId?: string;
+            capacity?: number;
+            startsAt?: string;
+            endsAt?: string;
+        };
+        ConflictReferenceResponseDto: {
+            /** @enum {string} */
+            kind: "JOB" | "TRAINING_SESSION";
+            /** @description Omitted for a JOB reference when the caller cannot read jobs (D22). */
+            referenceId?: string;
+            referenceLabel: string;
+            startsAt: string;
+            endsAt: string;
+        };
+        ScheduleConflictResponseDto: {
+            /** @description Omitted for a JOB conflict when the caller cannot read jobs (D22). */
+            conflictKey?: string;
+            /** @enum {string} */
+            kind: "BAY_JOB_CONFLICT" | "BAY_SESSION_CONFLICT" | "BAY_UNAVAILABLE" | "MENTOR_SESSION_CONFLICT" | "MENTOR_WORKSHOP_CONFLICT";
+            /** @description [OWNER RULE] D9/UC-25: true only for a bay conflict (BAY_JOB_CONFLICT/BAY_SESSION_CONFLICT) — person conflicts are never overridable. */
+            overridable: boolean;
+            overridden: boolean;
+            message: string;
+            bayId?: string;
+            mentorId?: string;
+            conflictingReference?: components["schemas"]["ConflictReferenceResponseDto"];
+        };
+        ConflictReportResponseDto: {
+            sessionId: string;
+            evaluatedAt: string;
+            hasConflicts: boolean;
+            canPublish: boolean;
+            /** @description createOverrides() only (UC-25 step 3): true when this exact call also published the DRAFT session. */
+            published?: boolean;
+            conflicts: components["schemas"]["ScheduleConflictResponseDto"][];
+        };
+        ConflictOverrideRequestDto: {
+            conflictKeys: string[];
+            reason: string;
+        };
+        SessionTransitionDto: {
+            /** @enum {string} */
+            toStatus: "PUBLISHED" | "COMPLETED" | "CANCELLED";
+            reason?: string;
+        };
+        AttendanceRecordInputDto: {
+            /** Format: uuid */
+            studentId: string;
+            /** @enum {string} */
+            status: "PRESENT" | "ABSENT" | "LATE" | "EXCUSED";
+            note?: string;
+            /**
+             * @description D36(f): when attendance was actually taken, if it is being recorded later. Defaults to now;
+             *     may not be in the future. The time it was recorded is always stored separately.
+             */
+            occurredAt?: string;
+        };
+        AttendanceBulkRequestDto: {
+            records: components["schemas"]["AttendanceRecordInputDto"][];
+        };
+        AttendanceResponseDto: {
+            id: string;
+            sessionId: string;
+            studentId: string;
+            /** @enum {string} */
+            status: "PRESENT" | "ABSENT" | "LATE" | "EXCUSED";
+            note?: string;
+            createdAt: string;
+            updatedAt: string;
+            createdBy: string;
+            updatedBy: string;
+            recordedBy: string;
+            /** @description D36(f): when attendance was actually taken (may be client-supplied, defaults to now). */
+            occurredAt: string;
+            /** @description D36(f): when this record was written by the server. */
+            recordedAt: string;
+        };
+        AttendanceBulkResponseDto: {
+            items: components["schemas"]["AttendanceResponseDto"][];
+        };
+        AttendanceListResponseDto: {
+            items: components["schemas"]["AttendanceResponseDto"][];
+            page: components["schemas"]["PageMetaDto"];
+        };
+        PracticalTaskResponseDto: {
+            id: string;
+            code: string;
+            title: components["schemas"]["LocalizedNameDto"];
+            description?: string;
+            competencyId: string;
+            expectedMinutes: number;
+            /** @enum {string} */
+            status: "ACTIVE" | "ARCHIVED";
+            createdAt: string;
+            updatedAt: string;
+            createdBy?: string;
+            updatedBy?: string;
+        };
+        PracticalTaskListResponseDto: {
+            items: components["schemas"]["PracticalTaskResponseDto"][];
+            page: components["schemas"]["PageMetaDto"];
+        };
+        CreatePracticalTaskDto: {
+            code: string;
+            title: components["schemas"]["LocalizedNameDto"];
+            description?: string;
+            /** Format: uuid */
+            competencyId: string;
+            expectedMinutes: number;
+        };
+        UpdatePracticalTaskDto: {
+            title?: components["schemas"]["LocalizedNameDto"];
+            description?: string;
+            /** Format: uuid */
+            competencyId?: string;
+            expectedMinutes?: number;
+            /** @enum {string} */
+            status?: "ACTIVE" | "ARCHIVED";
+        };
+        AssessmentResponseDto: {
+            id: string;
+            sessionId: string;
+            studentId: string;
+            taskId: string;
+            courseId: string;
+            /** @enum {string} */
+            result: "PASS" | "FAIL" | "NEEDS_IMPROVEMENT";
+            timeOnTaskMinutes: number;
+            mentorNote?: string;
+            evidenceAttachmentIds: string[];
+            assessedBy: string;
+            /** @description D36(f): when the result actually happened (may be client-supplied, defaults to now). */
+            assessedAt: string;
+            /** @enum {string} */
+            signOffStatus: "PENDING" | "SIGNED_OFF" | "RETURNED";
+            signedOffBy?: string;
+            signedOffAt?: string;
+            signOffNote?: string;
+            countsTowardCompletion: boolean;
+            version: number;
+            /** @description D36(f): when this record was written by the server. */
+            recordedAt: string;
+            createdAt: string;
+            updatedAt: string;
+            createdBy: string;
+            updatedBy: string;
+        };
+        AssessmentListResponseDto: {
+            items: components["schemas"]["AssessmentResponseDto"][];
+            page: components["schemas"]["PageMetaDto"];
+        };
+        AssessmentCreateDto: {
+            /** Format: uuid */
+            sessionId: string;
+            /** Format: uuid */
+            studentId: string;
+            /** Format: uuid */
+            taskId: string;
+            /** @enum {string} */
+            result: "PASS" | "FAIL" | "NEEDS_IMPROVEMENT";
+            timeOnTaskMinutes: number;
+            mentorNote?: string;
+            evidenceAttachmentIds?: string[];
+            /**
+             * @description D36(f): when the result actually happened, if it is being recorded later. Defaults to now;
+             *     may not be in the future. The time it was recorded is always stored separately.
+             */
+            assessedAt?: string;
+        };
+        AssessmentUpdateDto: {
+            version: number;
+            /** @enum {string} */
+            result?: "PASS" | "FAIL" | "NEEDS_IMPROVEMENT";
+            timeOnTaskMinutes?: number;
+            mentorNote?: string;
+            evidenceAttachmentIds?: string[];
+            changeReason: string;
+        };
+        SignOffRequestDto: {
+            /** @enum {string} */
+            decision: "SIGNED_OFF" | "RETURNED";
+            note?: string;
+        };
+        CompetencyResponseDto: {
+            id: string;
+            code: string;
+            name: components["schemas"]["LocalizedNameDto"];
+            description?: string;
+            /** @enum {string} */
+            status: "ACTIVE" | "ARCHIVED";
+            createdAt: string;
+            updatedAt: string;
+            createdBy?: string;
+            updatedBy?: string;
+        };
+        CompetencyListResponseDto: {
+            items: components["schemas"]["CompetencyResponseDto"][];
+            page: components["schemas"]["PageMetaDto"];
+        };
+        CreateCompetencyDto: {
+            code: string;
+            name: components["schemas"]["LocalizedNameDto"];
+            description?: string;
+        };
+        UpdateCompetencyDto: {
+            name?: components["schemas"]["LocalizedNameDto"];
+            description?: string;
+            /** @enum {string} */
+            status?: "ACTIVE" | "ARCHIVED";
+        };
+        CompetencyCoverageItemDto: {
+            competencyId: string;
+            code: string;
+            name: components["schemas"]["LocalizedNameDto"];
+            requiredTasks: number;
+            signedPassedRequiredTasks: number;
+            pendingUnsignedTasks: number;
+            /** @description Rounded in SQL (NUMERIC), never JS floating point. */
+            coveragePercent: string;
+        };
+        CompetencyCoverageResponseDto: {
+            studentId: string;
+            courseId: string;
+            /** @description Rounded in SQL (NUMERIC), never JS floating point. */
+            overallPercent: string;
+            competencies: components["schemas"]["CompetencyCoverageItemDto"][];
+            generatedAt: string;
+        };
+        UnmetConditionDto: {
+            /** @enum {string} */
+            code: "ENROLLMENT_NOT_ACTIVE" | "ATTENDANCE_BELOW_MINIMUM" | "REQUIRED_TASK_NOT_PASSED" | "ASSESSMENT_UNSIGNED" | "CERTIFICATE_ALREADY_ISSUED";
+            message: string;
+            taskId?: string;
+        };
+        CompletionEligibilityResponseDto: {
+            studentId: string;
+            courseId: string;
+            eligible: boolean;
+            /** @description Rounded in SQL (NUMERIC), never JS floating point. */
+            attendancePercent: string;
+            minimumAttendancePercent: number;
+            unmetConditions: components["schemas"]["UnmetConditionDto"][];
+            evaluatedAt: string;
+        };
+        MetricBreakdownResponseDto: {
+            key: string;
+            label: string;
+            value: string;
+            recordCount?: number;
+        };
+        MetricResponseDto: {
+            key: string;
+            label: string;
+            /** @enum {string} */
+            unit: "COUNT" | "PERCENT" | "HOURS" | "DAYS" | "MONEY" | "RATIO";
+            value: string;
+            currencyCode?: string;
+            recordCount: number;
+            breakdown?: components["schemas"]["MetricBreakdownResponseDto"][];
+        };
+        DashboardResponseDto: {
+            /** @enum {string} */
+            dashboard: "WORKSHOP" | "INVENTORY_FINANCE" | "TRAINING" | "AI_DATA";
+            generatedAt: string;
+            dataAsOf: string;
+            filterFingerprint: string;
+            /** @description Applied filters, values can be string or undefined/null mapped to string */
+            appliedFilters: {
+                [key: string]: string | null;
+            };
+            metrics: components["schemas"]["MetricResponseDto"][];
+        };
+        MetricTotalResponseDto: {
+            key: string;
+            label: string;
+            unit: string;
+            value: string;
+            currencyCode?: string;
+            recordCount: number;
+        };
+        ExportJobResponseDto: {
+            id: string;
+            /** @enum {string} */
+            exportType: "JOBS" | "LABOR_ENTRIES" | "PART_ISSUES" | "STOCK_BALANCES" | "STOCK_MOVEMENTS" | "PURCHASE_ORDERS" | "INVOICES" | "CUSTOMER_STATEMENT" | "ATTENDANCE" | "ASSESSMENTS" | "CERTIFICATES" | "REORDER_SUGGESTIONS" | "TRAINING_RISK" | "DASHBOARD_WORKSHOP" | "DASHBOARD_INVENTORY_FINANCE" | "DASHBOARD_TRAINING" | "DASHBOARD_AI_DATA" | "AUDIT_EVENTS";
+            /** @enum {string} */
+            format: "CSV" | "PDF";
+            /** @enum {string} */
+            status: "PENDING" | "PROCESSING" | "COMPLETED" | "FAILED" | "EXPIRED";
+            /** @description Applied filters, values can be string or undefined/null mapped to string */
+            filters: {
+                [key: string]: string | null;
+            };
+            filterFingerprint: string;
+            sensitive: boolean;
+            customerId?: string;
+            rowCount?: number;
+            totals?: components["schemas"]["MetricTotalResponseDto"][];
+            completedAt?: string;
+            expiresAt?: string;
+            failureMessage?: string;
+            createdAt: string;
+            updatedAt: string;
+            createdBy: string | null;
+            updatedBy: string | null;
+        };
+        ExportJobPageResponseDto: {
+            items: components["schemas"]["ExportJobResponseDto"][];
+            page: components["schemas"]["PageMetaDto"];
+        };
+        ReportFiltersDto: {
+            from?: string;
+            to?: string;
+            /** Format: uuid */
+            organizationScopeId?: string;
+            /** Format: uuid */
+            storeId?: string;
+            /** Format: uuid */
+            bayId?: string;
+            /** Format: uuid */
+            technicianId?: string;
+            /** Format: uuid */
+            courseId?: string;
+            /** Format: uuid */
+            termId?: string;
+        };
+        ExportJobCreateRequestDto: {
+            /** @enum {string} */
+            exportType: "JOBS" | "LABOR_ENTRIES" | "PART_ISSUES" | "STOCK_BALANCES" | "STOCK_MOVEMENTS" | "PURCHASE_ORDERS" | "INVOICES" | "CUSTOMER_STATEMENT" | "ATTENDANCE" | "ASSESSMENTS" | "CERTIFICATES" | "REORDER_SUGGESTIONS" | "TRAINING_RISK" | "DASHBOARD_WORKSHOP" | "DASHBOARD_INVENTORY_FINANCE" | "DASHBOARD_TRAINING" | "DASHBOARD_AI_DATA" | "AUDIT_EVENTS";
+            /** @enum {string} */
+            format: "CSV" | "PDF";
+            filters?: components["schemas"]["ReportFiltersDto"];
+            /** Format: uuid */
+            customerId?: string;
+            /** @enum {string} */
+            locale?: "en" | "ar";
+        };
+        CertificateResponseDto: {
+            id: string;
+            certificateNumber: string;
+            studentId: string;
+            courseId: string;
+            issuedAt: string;
+            issuedBy: string;
+            /** @enum {string} */
+            status: "ISSUED" | "REVOKED";
+            revokedAt?: string;
+            revokedBy?: string;
+            revocationReason?: string;
+            /** @description Only ever present once, on the response to the issuing POST — never on a re-fetch (D11). */
+            verificationToken?: string;
+            createdAt: string;
+            updatedAt: string;
+            createdBy: string;
+            updatedBy: string;
+        };
+        CertificateListResponseDto: {
+            items: components["schemas"]["CertificateResponseDto"][];
+            page: components["schemas"]["PageMetaDto"];
+        };
+        CertificateIssueDto: {
+            /** Format: uuid */
+            studentId: string;
+            /** Format: uuid */
+            courseId: string;
+        };
+        RevokeCertificateDto: {
+            reason: string;
+        };
+        PublicCertificateVerificationResponseDto: {
+            certificateNumber: string;
+            /** @enum {string} */
+            status: "ISSUED" | "REVOKED";
+            /** @description Given name plus family initial only (e.g. "Sara M.") — never the full name. */
+            holderDisplayName: string;
+            courseName: components["schemas"]["LocalizedNameDto"];
+            issuedAt: string;
+            revokedAt?: string;
+        };
+        PredictionSettingsResponseDto: {
+            version: number;
+            reorderLookbackWeeks: number;
+            mlServiceEnabled: boolean;
+            baselineVersion: string;
+        };
+        PredictionSettingsUpdateDto: {
+            version: number;
+            reorderLookbackWeeks: number;
+            mlServiceEnabled: boolean;
+        };
+        PredictionSourceResponseDto: {
+            /** @enum {string} */
+            kind: "RULE_BASELINE" | "ML_MODEL";
+            name: string;
+            version: string;
+        };
+        PredictionExplanationFactorResponseDto: {
+            code: string;
+            message: string;
+            value?: string;
+        };
+        PredictionExplanationResponseDto: {
+            summary: string;
+            factors: components["schemas"]["PredictionExplanationFactorResponseDto"][];
+        };
+        ReorderInputResponseDto: {
+            storeId: string;
+            partId: string;
+            partSku: string;
+            onHand: number;
+            reserved: number;
+            available: number;
+            minLevel: number;
+            maxLevel: number;
+            openPurchaseOrderQuantity: number;
+            averageWeeklyConsumption: string;
+            lookbackWeeks: number;
+        };
+        ReorderResultResponseDto: {
+            suggestedQuantity: number;
+            estimatedWeeksOfCover?: string;
+        };
+        ReorderDetailResponseDto: {
+            input: components["schemas"]["ReorderInputResponseDto"];
+            result: components["schemas"]["ReorderResultResponseDto"];
+            actualWeeklyConsumption?: string;
+        };
+        TrainingRiskInputResponseDto: {
+            studentId: string;
+            courseId: string;
+            attendancePercent: string;
+            missingAttendanceSessions: number;
+            unsignedAssessmentCount: number;
+            unmetCompetencyCount: number;
+        };
+        TrainingRiskResultResponseDto: {
+            /** @enum {string} */
+            riskLevel: "LOW" | "MEDIUM" | "HIGH";
+            flags: string[];
+        };
+        TrainingRiskDetailResponseDto: {
+            input: components["schemas"]["TrainingRiskInputResponseDto"];
+            result: components["schemas"]["TrainingRiskResultResponseDto"];
+        };
+        PredictionDecisionResponseDto: {
+            /** @enum {string} */
+            decision: "ACCEPTED" | "OVERRIDDEN" | "DISMISSED";
+            decidedBy: string;
+            decidedAt: string;
+            overrideReason?: string;
+            overrideQuantity?: number;
+            note?: string;
+        };
+        PredictionEvaluationResponseDto: {
+            /** @enum {string} */
+            outcome: "PENDING" | "CONFIRMED" | "NOT_CONFIRMED" | "NOT_APPLICABLE";
+            evaluatedAt?: string;
+            note?: string;
+        };
+        PredictionResponseDto: {
+            id: string;
+            /** @enum {string} */
+            type: "REORDER_SUGGESTION" | "TRAINING_RISK";
+            /** @enum {string} */
+            status: "ACTIVE" | "ACCEPTED" | "OVERRIDDEN" | "DISMISSED" | "SUPERSEDED";
+            advisoryOnly: boolean;
+            generatedAt: string;
+            source: components["schemas"]["PredictionSourceResponseDto"];
+            explanation: components["schemas"]["PredictionExplanationResponseDto"];
+            reorder?: components["schemas"]["ReorderDetailResponseDto"];
+            trainingRisk?: components["schemas"]["TrainingRiskDetailResponseDto"];
+            decision?: components["schemas"]["PredictionDecisionResponseDto"];
+            evaluation: components["schemas"]["PredictionEvaluationResponseDto"];
+        };
+        PredictionPageResponseDto: {
+            items: components["schemas"]["PredictionResponseDto"][];
+            page: components["schemas"]["PageMetaDto"];
+        };
+        PredictionDecisionRequestDto: {
+            /** @enum {string} */
+            decision: "ACCEPTED" | "OVERRIDDEN" | "DISMISSED";
+            overrideReason?: string;
+            overrideQuantity?: number;
+            note?: string;
+        };
+        PredictionRunRequestDto: {
+            /** @enum {string} */
+            type: "REORDER_SUGGESTION" | "TRAINING_RISK";
+            /** Format: uuid */
+            storeId?: string;
+            /** Format: uuid */
+            courseId?: string;
+        };
+        PredictionRunResponseDto: {
+            id: string;
+            /** @enum {string} */
+            type: "REORDER_SUGGESTION" | "TRAINING_RISK";
+            source: components["schemas"]["PredictionSourceResponseDto"];
+            startedAt: string;
+            finishedAt: string;
+            generatedCount: number;
+            /** @enum {string} */
+            mlService: "NOT_ENABLED" | "AVAILABLE" | "UNAVAILABLE_FALLBACK_USED";
         };
         TechnicianProfileResponseDto: {
             id: string;
@@ -9566,6 +11363,3151 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["DataQualitySettingsResponseDto"];
+                };
+            };
+            /** @description The request body or parameters are invalid. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not signed in, or the session ended or expired. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The caller's role may not do this, or a password change is required first. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    TrainingTermsController_list: {
+        parameters: {
+            query?: {
+                page?: number;
+                pageSize?: number;
+                status?: "PLANNED" | "ACTIVE" | "CLOSED";
+                sort?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TrainingTermListResponseDto"];
+                };
+            };
+            /** @description Not signed in, or the session ended or expired. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The caller's role may not do this, or a password change is required first. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    TrainingTermsController_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateTrainingTermDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TrainingTermResponseDto"];
+                };
+            };
+            /** @description The request body or parameters are invalid. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not signed in, or the session ended or expired. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The caller's role may not do this, or a password change is required first. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    TrainingTermsController_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                termId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateTrainingTermDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TrainingTermResponseDto"];
+                };
+            };
+            /** @description The request body or parameters are invalid. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not signed in, or the session ended or expired. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The caller's role may not do this, or a password change is required first. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not found — or outside what the caller may see. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    CoursesController_list: {
+        parameters: {
+            query?: {
+                page?: number;
+                pageSize?: number;
+                q?: string;
+                termId?: string;
+                status?: "DRAFT" | "ACTIVE" | "ARCHIVED";
+                sort?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CourseListResponseDto"];
+                };
+            };
+            /** @description Not signed in, or the session ended or expired. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The caller's role may not do this, or a password change is required first. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    CoursesController_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateCourseDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CourseResponseDto"];
+                };
+            };
+            /** @description The request body or parameters are invalid. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not signed in, or the session ended or expired. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The caller's role may not do this, or a password change is required first. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    CoursesController_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                courseId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateCourseDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CourseResponseDto"];
+                };
+            };
+            /** @description The request body or parameters are invalid. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not signed in, or the session ended or expired. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The caller's role may not do this, or a password change is required first. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not found — or outside what the caller may see. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    MentorsController_list: {
+        parameters: {
+            query?: {
+                page?: number;
+                pageSize?: number;
+                q?: string;
+                sort?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MentorListResponseDto"];
+                };
+            };
+            /** @description Not signed in, or the session ended or expired. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The caller's role may not do this, or a password change is required first. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    MentorProfilesController_list: {
+        parameters: {
+            query?: {
+                page?: number;
+                pageSize?: number;
+                status?: "ACTIVE" | "INACTIVE";
+                sort?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MentorProfileListResponseDto"];
+                };
+            };
+            /** @description Not signed in, or the session ended or expired. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The caller's role may not do this, or a password change is required first. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    MentorProfilesController_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateMentorProfileDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MentorProfileResponseDto"];
+                };
+            };
+            /** @description The request body or parameters are invalid. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not signed in, or the session ended or expired. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The caller's role may not do this, or a password change is required first. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    MentorProfilesController_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                mentorProfileId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MentorProfileResponseDto"];
+                };
+            };
+            /** @description Not signed in, or the session ended or expired. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The caller's role may not do this, or a password change is required first. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not found — or outside what the caller may see. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    MentorProfilesController_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                mentorProfileId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateMentorProfileDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MentorProfileResponseDto"];
+                };
+            };
+            /** @description The request body or parameters are invalid. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not signed in, or the session ended or expired. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The caller's role may not do this, or a password change is required first. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not found — or outside what the caller may see. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    StudentsController_list: {
+        parameters: {
+            query?: {
+                page?: number;
+                pageSize?: number;
+                q?: string;
+                status?: "ACTIVE" | "INACTIVE";
+                groupId?: string;
+                courseId?: string;
+                sort?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StudentListResponseDto"];
+                };
+            };
+            /** @description Not signed in, or the session ended or expired. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The caller's role may not do this, or a password change is required first. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    StudentsController_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateStudentDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StudentResponseDto"];
+                };
+            };
+            /** @description The request body or parameters are invalid. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not signed in, or the session ended or expired. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The caller's role may not do this, or a password change is required first. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    StudentsController_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                studentId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StudentResponseDto"];
+                };
+            };
+            /** @description Not signed in, or the session ended or expired. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The caller's role may not do this, or a password change is required first. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not found — or outside what the caller may see. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    StudentsController_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                studentId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateStudentDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StudentResponseDto"];
+                };
+            };
+            /** @description The request body or parameters are invalid. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not signed in, or the session ended or expired. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The caller's role may not do this, or a password change is required first. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not found — or outside what the caller may see. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    TrainingGroupsController_list: {
+        parameters: {
+            query?: {
+                page?: number;
+                pageSize?: number;
+                courseId?: string;
+                status?: "ACTIVE" | "CLOSED";
+                sort?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TrainingGroupListResponseDto"];
+                };
+            };
+            /** @description Not signed in, or the session ended or expired. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The caller's role may not do this, or a password change is required first. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    TrainingGroupsController_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateTrainingGroupDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TrainingGroupResponseDto"];
+                };
+            };
+            /** @description The request body or parameters are invalid. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not signed in, or the session ended or expired. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The caller's role may not do this, or a password change is required first. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    TrainingGroupsController_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                groupId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateTrainingGroupDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TrainingGroupResponseDto"];
+                };
+            };
+            /** @description The request body or parameters are invalid. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not signed in, or the session ended or expired. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The caller's role may not do this, or a password change is required first. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not found — or outside what the caller may see. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    EnrollmentsController_list: {
+        parameters: {
+            query?: {
+                page?: number;
+                pageSize?: number;
+                status?: "ACTIVE" | "WITHDRAWN" | "COMPLETED";
+                sort?: string;
+            };
+            header?: never;
+            path: {
+                groupId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EnrollmentListResponseDto"];
+                };
+            };
+            /** @description Not signed in, or the session ended or expired. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The caller's role may not do this, or a password change is required first. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not found — or outside what the caller may see. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    EnrollmentsController_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                groupId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateEnrollmentDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EnrollmentResponseDto"];
+                };
+            };
+            /** @description The request body or parameters are invalid. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not signed in, or the session ended or expired. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The caller's role may not do this, or a password change is required first. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not found — or outside what the caller may see. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    EnrollmentsController_withdraw: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                enrollmentId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateEnrollmentDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EnrollmentResponseDto"];
+                };
+            };
+            /** @description The request body or parameters are invalid. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not signed in, or the session ended or expired. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The caller's role may not do this, or a password change is required first. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not found — or outside what the caller may see. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    TrainingSessionsController_list: {
+        parameters: {
+            query?: {
+                page?: number;
+                pageSize?: number;
+                from?: string;
+                to?: string;
+                courseId?: string;
+                termId?: string;
+                groupId?: string;
+                bayId?: string;
+                mentorId?: string;
+                status?: "DRAFT" | "PUBLISHED" | "COMPLETED" | "CANCELLED";
+                sort?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TrainingSessionListResponseDto"];
+                };
+            };
+            /** @description Not signed in, or the session ended or expired. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The caller's role may not do this, or a password change is required first. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    TrainingSessionsController_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateTrainingSessionDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TrainingSessionResponseDto"];
+                };
+            };
+            /** @description The request body or parameters are invalid. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not signed in, or the session ended or expired. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The caller's role may not do this, or a password change is required first. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    TrainingSessionsController_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                sessionId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TrainingSessionResponseDto"];
+                };
+            };
+            /** @description Not signed in, or the session ended or expired. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The caller's role may not do this, or a password change is required first. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not found — or outside what the caller may see. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    TrainingSessionsController_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                sessionId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateTrainingSessionDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TrainingSessionResponseDto"];
+                };
+            };
+            /** @description The request body or parameters are invalid. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not signed in, or the session ended or expired. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The caller's role may not do this, or a password change is required first. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not found — or outside what the caller may see. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    TrainingSessionsController_checkConflicts: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                sessionId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConflictReportResponseDto"];
+                };
+            };
+            /** @description Not signed in, or the session ended or expired. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The caller's role may not do this, or a password change is required first. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not found — or outside what the caller may see. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    TrainingSessionsController_createOverrides: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                sessionId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ConflictOverrideRequestDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConflictReportResponseDto"];
+                };
+            };
+            /** @description The request body or parameters are invalid. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not signed in, or the session ended or expired. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The caller's role may not do this, or a password change is required first. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not found — or outside what the caller may see. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    TrainingSessionsController_transition: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                sessionId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SessionTransitionDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TrainingSessionResponseDto"];
+                };
+            };
+            /** @description The request body or parameters are invalid. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not signed in, or the session ended or expired. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The caller's role may not do this, or a password change is required first. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not found — or outside what the caller may see. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    AttendanceController_record: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                sessionId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AttendanceBulkRequestDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AttendanceBulkResponseDto"];
+                };
+            };
+            /** @description The request body or parameters are invalid. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not signed in, or the session ended or expired. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The caller's role may not do this, or a password change is required first. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not found — or outside what the caller may see. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    AttendanceController_list: {
+        parameters: {
+            query?: {
+                page?: number;
+                pageSize?: number;
+                from?: string;
+                to?: string;
+                sessionId?: string;
+                studentId?: string;
+                status?: "PRESENT" | "ABSENT" | "LATE" | "EXCUSED";
+                sort?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AttendanceListResponseDto"];
+                };
+            };
+            /** @description Not signed in, or the session ended or expired. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The caller's role may not do this, or a password change is required first. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    PracticalTasksController_list: {
+        parameters: {
+            query?: {
+                page?: number;
+                pageSize?: number;
+                q?: string;
+                competencyId?: string;
+                status?: "ACTIVE" | "ARCHIVED";
+                sort?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PracticalTaskListResponseDto"];
+                };
+            };
+            /** @description Not signed in, or the session ended or expired. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The caller's role may not do this, or a password change is required first. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    PracticalTasksController_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreatePracticalTaskDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PracticalTaskResponseDto"];
+                };
+            };
+            /** @description The request body or parameters are invalid. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not signed in, or the session ended or expired. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The caller's role may not do this, or a password change is required first. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    PracticalTasksController_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                taskId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdatePracticalTaskDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PracticalTaskResponseDto"];
+                };
+            };
+            /** @description The request body or parameters are invalid. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not signed in, or the session ended or expired. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The caller's role may not do this, or a password change is required first. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not found — or outside what the caller may see. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    AssessmentsController_list: {
+        parameters: {
+            query?: {
+                page?: number;
+                pageSize?: number;
+                from?: string;
+                to?: string;
+                sessionId?: string;
+                studentId?: string;
+                taskId?: string;
+                courseId?: string;
+                result?: "PASS" | "FAIL" | "NEEDS_IMPROVEMENT";
+                signOffStatus?: "PENDING" | "SIGNED_OFF" | "RETURNED";
+                sort?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AssessmentListResponseDto"];
+                };
+            };
+            /** @description Not signed in, or the session ended or expired. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The caller's role may not do this, or a password change is required first. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    AssessmentsController_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AssessmentCreateDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AssessmentResponseDto"];
+                };
+            };
+            /** @description The request body or parameters are invalid. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not signed in, or the session ended or expired. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The caller's role may not do this, or a password change is required first. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    AssessmentsController_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                assessmentId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AssessmentUpdateDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AssessmentResponseDto"];
+                };
+            };
+            /** @description The request body or parameters are invalid. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not signed in, or the session ended or expired. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The caller's role may not do this, or a password change is required first. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not found — or outside what the caller may see. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    AssessmentsController_signOff: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                assessmentId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SignOffRequestDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AssessmentResponseDto"];
+                };
+            };
+            /** @description The request body or parameters are invalid. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not signed in, or the session ended or expired. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The caller's role may not do this, or a password change is required first. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not found — or outside what the caller may see. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    CompetenciesController_list: {
+        parameters: {
+            query?: {
+                page?: number;
+                pageSize?: number;
+                status?: "ACTIVE" | "ARCHIVED";
+                sort?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CompetencyListResponseDto"];
+                };
+            };
+            /** @description Not signed in, or the session ended or expired. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The caller's role may not do this, or a password change is required first. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    CompetenciesController_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateCompetencyDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CompetencyResponseDto"];
+                };
+            };
+            /** @description The request body or parameters are invalid. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not signed in, or the session ended or expired. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The caller's role may not do this, or a password change is required first. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    CompetenciesController_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                competencyId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateCompetencyDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CompetencyResponseDto"];
+                };
+            };
+            /** @description The request body or parameters are invalid. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not signed in, or the session ended or expired. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The caller's role may not do this, or a password change is required first. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not found — or outside what the caller may see. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    StudentProgressController_getCoverage: {
+        parameters: {
+            query: {
+                courseId: string;
+            };
+            header?: never;
+            path: {
+                studentId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CompetencyCoverageResponseDto"];
+                };
+            };
+            /** @description Not signed in, or the session ended or expired. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The caller's role may not do this, or a password change is required first. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not found — or outside what the caller may see. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    StudentProgressController_getEligibility: {
+        parameters: {
+            query: {
+                courseId: string;
+            };
+            header?: never;
+            path: {
+                studentId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CompletionEligibilityResponseDto"];
+                };
+            };
+            /** @description Not signed in, or the session ended or expired. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The caller's role may not do this, or a password change is required first. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not found — or outside what the caller may see. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    DashboardsController_getWorkshop: {
+        parameters: {
+            query?: {
+                from?: string;
+                to?: string;
+                organizationScopeId?: string;
+                storeId?: string;
+                bayId?: string;
+                technicianId?: string;
+                courseId?: string;
+                termId?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DashboardResponseDto"];
+                };
+            };
+            /** @description Not signed in, or the session ended or expired. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The caller's role may not do this, or a password change is required first. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    DashboardsController_getInventoryFinance: {
+        parameters: {
+            query?: {
+                from?: string;
+                to?: string;
+                organizationScopeId?: string;
+                storeId?: string;
+                bayId?: string;
+                technicianId?: string;
+                courseId?: string;
+                termId?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DashboardResponseDto"];
+                };
+            };
+            /** @description Not signed in, or the session ended or expired. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The caller's role may not do this, or a password change is required first. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    DashboardsController_getTraining: {
+        parameters: {
+            query?: {
+                from?: string;
+                to?: string;
+                organizationScopeId?: string;
+                storeId?: string;
+                bayId?: string;
+                technicianId?: string;
+                courseId?: string;
+                termId?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DashboardResponseDto"];
+                };
+            };
+            /** @description Not signed in, or the session ended or expired. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The caller's role may not do this, or a password change is required first. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    DashboardsController_getAiData: {
+        parameters: {
+            query?: {
+                from?: string;
+                to?: string;
+                organizationScopeId?: string;
+                storeId?: string;
+                bayId?: string;
+                technicianId?: string;
+                courseId?: string;
+                termId?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DashboardResponseDto"];
+                };
+            };
+            /** @description Not signed in, or the session ended or expired. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The caller's role may not do this, or a password change is required first. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    ExportsController_list: {
+        parameters: {
+            query?: {
+                page?: number;
+                pageSize?: number;
+                status?: "PENDING" | "PROCESSING" | "COMPLETED" | "FAILED" | "EXPIRED";
+                exportType?: "JOBS" | "LABOR_ENTRIES" | "PART_ISSUES" | "STOCK_BALANCES" | "STOCK_MOVEMENTS" | "PURCHASE_ORDERS" | "INVOICES" | "CUSTOMER_STATEMENT" | "ATTENDANCE" | "ASSESSMENTS" | "CERTIFICATES" | "REORDER_SUGGESTIONS" | "TRAINING_RISK" | "DASHBOARD_WORKSHOP" | "DASHBOARD_INVENTORY_FINANCE" | "DASHBOARD_TRAINING" | "DASHBOARD_AI_DATA" | "AUDIT_EVENTS";
+                sort?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExportJobPageResponseDto"];
+                };
+            };
+            /** @description Not signed in, or the session ended or expired. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The caller's role may not do this, or a password change is required first. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    ExportsController_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ExportJobCreateRequestDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExportJobResponseDto"];
+                };
+            };
+            /** @description The request body or parameters are invalid. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not signed in, or the session ended or expired. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The caller's role may not do this, or a password change is required first. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    ExportsController_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                exportJobId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExportJobResponseDto"];
+                };
+            };
+            /** @description Not signed in, or the session ended or expired. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The caller's role may not do this, or a password change is required first. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not found — or outside what the caller may see. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    ExportsController_authorizeDownload: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                exportJobId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DownloadAuthorizationResponseDto"];
+                };
+            };
+            /** @description Not signed in, or the session ended or expired. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The caller's role may not do this, or a password change is required first. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not found — or outside what the caller may see. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    ExportsController_download: {
+        parameters: {
+            query?: {
+                sig?: unknown;
+                expires?: unknown;
+            };
+            header?: never;
+            path: {
+                authorizationId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/csv": string;
+                    "application/pdf": string;
+                };
+            };
+            /** @description Not signed in, or the session ended or expired. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The caller's role may not do this, or a password change is required first. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not found — or outside what the caller may see. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    CertificatesController_list: {
+        parameters: {
+            query?: {
+                page?: number;
+                pageSize?: number;
+                studentId?: string;
+                courseId?: string;
+                status?: "ISSUED" | "REVOKED";
+                sort?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CertificateListResponseDto"];
+                };
+            };
+            /** @description Not signed in, or the session ended or expired. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The caller's role may not do this, or a password change is required first. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    CertificatesController_create: {
+        parameters: {
+            query?: never;
+            header: {
+                "idempotency-key": string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CertificateIssueDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CertificateResponseDto"];
+                };
+            };
+            /** @description The request body or parameters are invalid. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not signed in, or the session ended or expired. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The caller's role may not do this, or a password change is required first. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    CertificatesController_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                certificateId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CertificateResponseDto"];
+                };
+            };
+            /** @description Not signed in, or the session ended or expired. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The caller's role may not do this, or a password change is required first. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not found — or outside what the caller may see. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    CertificatesController_revoke: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                certificateId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RevokeCertificateDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CertificateResponseDto"];
+                };
+            };
+            /** @description The request body or parameters are invalid. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not signed in, or the session ended or expired. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The caller's role may not do this, or a password change is required first. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not found — or outside what the caller may see. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    PublicCertificateVerificationController_verify: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                verificationToken: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PublicCertificateVerificationResponseDto"];
+                };
+            };
+        };
+    };
+    PredictionSettingsController_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PredictionSettingsResponseDto"];
+                };
+            };
+            /** @description Not signed in, or the session ended or expired. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The caller's role may not do this, or a password change is required first. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    PredictionSettingsController_replace: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PredictionSettingsUpdateDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PredictionSettingsResponseDto"];
+                };
+            };
+            /** @description The request body or parameters are invalid. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not signed in, or the session ended or expired. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The caller's role may not do this, or a password change is required first. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    PredictionsController_list: {
+        parameters: {
+            query?: {
+                page?: number;
+                pageSize?: number;
+                from?: string;
+                to?: string;
+                type?: "REORDER_SUGGESTION" | "TRAINING_RISK";
+                status?: "ACTIVE" | "ACCEPTED" | "OVERRIDDEN" | "DISMISSED" | "SUPERSEDED";
+                storeId?: string;
+                partId?: string;
+                studentId?: string;
+                courseId?: string;
+                riskLevel?: "LOW" | "MEDIUM" | "HIGH";
+                sort?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PredictionPageResponseDto"];
+                };
+            };
+            /** @description Not signed in, or the session ended or expired. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The caller's role may not do this, or a password change is required first. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    PredictionsController_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                predictionId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PredictionResponseDto"];
+                };
+            };
+            /** @description Not signed in, or the session ended or expired. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The caller's role may not do this, or a password change is required first. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not found — or outside what the caller may see. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    PredictionsController_decide: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                predictionId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PredictionDecisionRequestDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PredictionResponseDto"];
+                };
+            };
+            /** @description The request body or parameters are invalid. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not signed in, or the session ended or expired. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The caller's role may not do this, or a password change is required first. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not found — or outside what the caller may see. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    PredictionRunsController_run: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PredictionRunRequestDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PredictionRunResponseDto"];
                 };
             };
             /** @description The request body or parameters are invalid. */

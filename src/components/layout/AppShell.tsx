@@ -31,6 +31,7 @@ const pageTitleKeys: Record<string, string> = {
   '/operating-hours': 'Operating Hours',
   '/notifications': 'Notifications',
   '/audit-log': 'Audit Log',
+  '/certificates': 'Certificates',
   '/change-password': 'Change Password',
 }
 
@@ -271,6 +272,16 @@ const ALL_NAV_ITEMS: NavItem[] = [
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
         <circle cx="12" cy="12" r="10" />
         <polyline points="12 6 12 12 16 14" />
+      </svg>
+    ),
+  },
+  {
+    label: 'Certificates',
+    path: '/certificates',
+    icon: (
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+        <circle cx="12" cy="8" r="6" />
+        <path d="M15.477 12.89L17 22l-5-3-5 3 1.523-9.11" />
       </svg>
     ),
   },
