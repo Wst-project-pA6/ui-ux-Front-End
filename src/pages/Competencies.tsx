@@ -1,326 +1,323 @@
-import React, { useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { PageHeader, SearchBar } from '../components/ui/PageHeader'
-import { Badge } from '../components/ui/Badge'
+import { Badge, badgeVariantFor } from '../components/ui/Badge'
 import { Button } from '../components/ui/Button'
 import { Modal } from '../components/ui/Modal'
+import { Input, Select, Textarea } from '../components/ui/Input'
+import { useToast } from '../components/ui/Toast'
 import { useLang } from '../i18n/LanguageContext'
-import { certificatesApi } from '../api/resources'
-import { ApiError } from '../api/http'
-import { DemoBadge } from '../components/ui/ApiState'
 import { useAuth } from '../context/AuthContext'
+import { trainingV3, type Competency, type PracticalTask } from '../api/v6/training'
+import { PERMS, backendErrorMessage } from '../api/v3/types'
+import { ApiError } from '../api/errors'
+import { LoadingState, EmptyState, ErrorState, FieldErrors } from '../components/common/ApiStates'
 
-type CertStatus = 'not-eligible' | 'pending' | 'eligible' | 'issued' | 'revoked'
+type Tab = 'competencies' | 'tasks'
 
-type CompetencyStatus = 'pass' | 'needs-improvement' | 'pending'
-
-interface Student {
-  id: string
-  name: string
-  course: string
-  certStatus: CertStatus
-  certNumber: string | null
-  certDate: string | null
-  completionPct: number
-  competencies: Array<{ name: string; status: CompetencyStatus; signed: boolean }>
+function locName(name: { en?: string; ar?: string } | undefined, lang: string): string {
+  if (!name) return '—'
+  return (lang === 'ar' ? name.ar || name.en : name.en || name.ar) ?? '—'
 }
-
-const INITIAL_STUDENTS: Student[] = [
-  {
-    id: 'STU-001',
-    name: 'Abdullah Al-Faraj',
-    course: 'Engine Overhaul Basics',
-    certStatus: 'issued' as CertStatus,
-    certNumber: 'CERT-2024-0091',
-    certDate: '2024-08-30',
-    completionPct: 100,
-    competencies: [
-      { name: 'Oil Change Procedure', status: 'pass' as const, signed: true },
-      { name: 'Air Filter Inspection', status: 'pass' as const, signed: true },
-      { name: 'Coolant Check & Top-up', status: 'pass' as const, signed: true },
-      { name: 'Spark Plug Replacement', status: 'pass' as const, signed: true },
-    ],
-  },
-  {
-    id: 'STU-002',
-    name: 'Lama Al-Saqr',
-    course: 'Brake System Inspection',
-    certStatus: 'pending' as CertStatus,
-    certNumber: null,
-    certDate: null,
-    completionPct: 75,
-    competencies: [
-      { name: 'Brake Pad Measurement', status: 'needs-improvement' as const, signed: false },
-      { name: 'Rotor Inspection', status: 'pass' as const, signed: true },
-      { name: 'Caliper Check', status: 'pass' as const, signed: true },
-      { name: 'Brake Fluid Test', status: 'pending' as const, signed: false },
-    ],
-  },
-  {
-    id: 'STU-003',
-    name: 'Turki Al-Dosari',
-    course: 'Engine Overhaul Basics',
-    certStatus: 'eligible' as CertStatus,
-    certNumber: null,
-    certDate: null,
-    completionPct: 100,
-    competencies: [
-      { name: 'Oil Change Procedure', status: 'pass' as const, signed: true },
-      { name: 'Air Filter Inspection', status: 'pass' as const, signed: true },
-      { name: 'Coolant Check & Top-up', status: 'pass' as const, signed: true },
-      { name: 'Spark Plug Replacement', status: 'pass' as const, signed: true },
-    ],
-  },
-  {
-    id: 'STU-004',
-    name: 'Maha Al-Otaibi',
-    course: 'Electrical Diagnostics & ECU',
-    certStatus: 'not-eligible' as CertStatus,
-    certNumber: null,
-    certDate: null,
-    completionPct: 40,
-    competencies: [
-      { name: 'OBD-II Fault Reading', status: 'pass' as const, signed: false },
-      { name: 'Multimeter Usage', status: 'pass' as const, signed: false },
-      { name: 'ECU Reset Procedure', status: 'pending' as const, signed: false },
-      { name: 'Wiring Harness Inspection', status: 'pending' as const, signed: false },
-      { name: 'Sensor Testing', status: 'pending' as const, signed: false },
-    ],
-  },
-]
 
 export default function Competencies() {
   const { t } = useLang()
-  const { mode } = useAuth()
-  const [search, setSearch] = useState('')
-  const [students, setStudents] = useState<Student[]>(INITIAL_STUDENTS)
-  const [selected, setSelected] = useState<Student | null>(null)
-  const [issuing, setIssuing] = useState(false)
-  const [issueError, setIssueError] = useState('')
+  const { hasPermission } = useAuth()
+  const canManage = hasPermission(PERMS.trainingManage)
+  const [tab, setTab] = useState<Tab>('competencies')
+  return (
+    <div className="space-y-6">
+      <PageHeader title={t('comp.title')} subtitle={t('comp.subtitle')} />
+      <div className="flex border-b border-slate-200">
+        {(
+          [
+            { key: 'competencies', label: t('comp.tab.competencies') },
+            { key: 'tasks', label: t('comp.tab.tasks') },
+          ] as { key: Tab; label: string }[]
+        ).map((t) => (
+          <button
+            key={t.key}
+            onClick={() => setTab(t.key)}
+            className={`px-4 py-2.5 text-sm font-medium border-b-2 ${tab === t.key ? 'border-blue-600 text-blue-600' : 'border-transparent text-slate-500 hover:text-slate-700'}`}
+          >
+            {t.label}
+          </button>
+        ))}
+      </div>
+      {tab === 'competencies' && <CompetencyTab canManage={canManage} />}
+      {tab === 'tasks' && <TasksTab canManage={canManage} />}
+    </div>
+  )
+}
 
-  // Certificate issuance (WST-FR-12): POST /certificates, only after all
-  // required signed results. Incomplete/unsigned -> 422 CERTIFICATE_NOT_ELIGIBLE.
-  const handleIssue = async (studentId: string) => {
-    setIssuing(true)
-    setIssueError('')
-    const certNumber = `CERT-${new Date().getFullYear()}-${String(Math.floor(1000 + Math.random() * 9000))}`
-    const certDate = new Date().toISOString().slice(0, 10)
-    const mark = (s: Student): Student => ({ ...s, certStatus: 'issued', certNumber, certDate })
+function CompetencyTab({ canManage }: { canManage: boolean }) {
+  const { t, lang } = useLang()
+  const { showToast } = useToast()
+  const [items, setItems] = useState<Competency[]>([])
+  const [state, setState] = useState<'idle' | 'loading' | 'success' | 'error'>('idle')
+  const [error, setError] = useState<unknown>(null)
+  const [modalOpen, setModalOpen] = useState(false)
+  const [editing, setEditing] = useState<Competency | null>(null)
+  const [form, setForm] = useState({ code: '', nameEn: '', nameAr: '', description: '', status: 'ACTIVE' })
+  const [saving, setSaving] = useState(false)
+  const [saveError, setSaveError] = useState<unknown>(null)
+
+  const load = useCallback(async () => {
+    setState('loading')
+    setError(null)
     try {
-      await certificatesApi.issue({ studentId, courseId: 'course-id' })
-      setStudents((prev) => prev.map(mark))
-      setSelected((prev) => (prev && prev.id === studentId ? mark(prev) : prev))
+      const res = await trainingV3.competencies({ page: 1, pageSize: 100 })
+      setItems(res.items)
+      setState('success')
     } catch (err) {
-      if (err instanceof ApiError && err.status === 0) {
-        // Offline demo: keep working locally, clearly labeled.
-        setStudents((prev) => prev.map(mark))
-        setSelected((prev) => (prev && prev.id === studentId ? mark(prev) : prev))
+      setError(err)
+      setState('error')
+    }
+  }, [])
+
+  useEffect(() => {
+    load()
+  }, [load])
+
+  const openCreate = () => {
+    setEditing(null)
+    setForm({ code: '', nameEn: '', nameAr: '', description: '', status: 'ACTIVE' })
+    setSaveError(null)
+    setModalOpen(true)
+  }
+
+  const openEdit = (c: Competency) => {
+    const r = c as unknown as { name?: { en?: string; ar?: string }; description?: string; status?: string }
+    setEditing(c)
+    setForm({ code: '', nameEn: r.name?.en ?? '', nameAr: r.name?.ar ?? '', description: r.description ?? '', status: r.status ?? 'ACTIVE' })
+    setSaveError(null)
+    setModalOpen(true)
+  }
+
+  const save = async () => {
+    if (saving) return
+    setSaving(true)
+    setSaveError(null)
+    try {
+      if (editing) {
+        await trainingV3.updateCompetency(editing.id, {
+          name: { en: form.nameEn.trim(), ...(form.nameAr ? { ar: form.nameAr } : {}) },
+          ...(form.description ? { description: form.description } : {}),
+          status: form.status as 'ACTIVE' | 'ARCHIVED',
+        })
+        showToast('success', 'Competency updated', '')
       } else {
-        setIssueError(err instanceof ApiError ? `${err.code}: ${err.message}` : 'Issuance failed')
+        if (!form.code.trim() || !form.nameEn.trim()) {
+          setSaveError(new ApiError({ message: 'Code and English name are required.', code: 'BAD_REQUEST', status: 400 }))
+          setSaving(false)
+          return
+        }
+        await trainingV3.createCompetency({
+          code: form.code.trim(),
+          name: { en: form.nameEn.trim(), ...(form.nameAr ? { ar: form.nameAr } : {}) },
+          ...(form.description ? { description: form.description } : {}),
+        })
+        showToast('success', 'Competency created', form.code.trim())
       }
+      setModalOpen(false)
+      load()
+    } catch (err) {
+      setSaveError(err)
     } finally {
-      setIssuing(false)
+      setSaving(false)
     }
   }
 
-  const certBadge: Record<CertStatus, { label: string; cls: string }> = {
-    'not-eligible': { label: t('competencies.cert.notEligible'), cls: 'bg-slate-100 text-slate-600 border border-slate-200' },
-    pending: { label: t('competencies.cert.pending'), cls: 'bg-amber-50 text-amber-700 border border-amber-200' },
-    eligible: { label: t('competencies.cert.eligible'), cls: 'bg-green-50 text-green-700 border border-green-200' },
-    issued: { label: t('competencies.cert.issued'), cls: 'bg-blue-50 text-blue-700 border border-blue-200' },
-    revoked: { label: t('competencies.cert.revoked'), cls: 'bg-red-50 text-red-700 border border-red-200' },
+  return (
+    <div className="bg-white border border-slate-200 rounded-xl">
+      <div className="flex items-center gap-3 px-4 py-3 border-b border-slate-100">
+        <p className="text-sm font-semibold">{t('comp.tab.competencies')} ({items.length})</p>
+        {canManage && <Button size="sm" onClick={openCreate}>{t('comp.new')}</Button>}
+      </div>
+      {state === 'loading' && <div className="p-4"><LoadingState /></div>}
+      {state === 'error' && <div className="p-4"><ErrorState error={error} onRetry={load} /></div>}
+      {state === 'success' && items.length === 0 && <div className="p-4"><EmptyState title={t('comp.noCompetencies')} /></div>}
+      {state === 'success' && items.length > 0 && (
+        <div className="divide-y divide-slate-50">
+          {items.map((c) => {
+            const r = c as unknown as { code?: string; name?: { en?: string; ar?: string }; status?: string }
+            return (
+              <div key={c.id} className="px-4 py-3 flex items-center gap-3">
+                <div className="flex-1">
+                  <p className="font-medium text-sm">{locName(r.name, lang)} <span className="font-mono text-xs text-slate-400" dir="ltr">{r.code}</span></p>
+                </div>
+                <Badge variant={badgeVariantFor(r.status ?? '')} />
+                {canManage && <Button variant="secondary" size="sm" onClick={() => openEdit(c)}>{t('f.edit')}</Button>}
+              </div>
+            )
+          })}
+        </div>
+      )}
+      <Modal open={modalOpen} onClose={() => !saving && setModalOpen(false)} title={editing ? t('comp.edit') : t('comp.new')} size="md"
+        footer={<><Button variant="secondary" disabled={saving} onClick={() => setModalOpen(false)}>Cancel</Button><Button disabled={saving} onClick={save}>{saving ? 'Saving…' : 'Save'}</Button></>}>
+        <div className="flex flex-col gap-3">
+          {!editing && <Input label={t('f.code')} value={form.code} onChange={(e) => setForm({ ...form, code: e.target.value })} required />}
+          <div className="grid grid-cols-2 gap-3">
+            <Input label={t('f.nameEn')} value={form.nameEn} onChange={(e) => setForm({ ...form, nameEn: e.target.value })} required />
+            <Input label={t('f.nameAr')} value={form.nameAr} onChange={(e) => setForm({ ...form, nameAr: e.target.value })} />
+          </div>
+          <Textarea label={t('f.description')} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} rows={2} />
+          {editing && (
+            <Select label={t('f.status')} value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })}
+              options={[{ value: 'ACTIVE', label: 'Active' }, { value: 'ARCHIVED', label: 'Archived' }]} />
+          )}
+          {saveError ? <FieldErrors error={saveError} /> : null}
+        </div>
+      </Modal>
+    </div>
+  )
+}
+
+function TasksTab({ canManage }: { canManage: boolean }) {
+  const { t, lang } = useLang()
+  const { showToast } = useToast()
+  const [items, setItems] = useState<PracticalTask[]>([])
+  const [q, setQ] = useState('')
+  const [debouncedQ, setDebouncedQ] = useState('')
+  const [state, setState] = useState<'idle' | 'loading' | 'success' | 'error'>('idle')
+  const [error, setError] = useState<unknown>(null)
+  const [competencies, setCompetencies] = useState<Competency[]>([])
+  const [modalOpen, setModalOpen] = useState(false)
+  const [editing, setEditing] = useState<PracticalTask | null>(null)
+  const [form, setForm] = useState({ code: '', titleEn: '', titleAr: '', description: '', competencyId: '', expectedMinutes: '', status: 'ACTIVE' })
+  const [saving, setSaving] = useState(false)
+  const [saveError, setSaveError] = useState<unknown>(null)
+
+  useEffect(() => {
+    const t = window.setTimeout(() => setDebouncedQ(q.trim()), 400)
+    return () => window.clearTimeout(t)
+  }, [q])
+
+  const load = useCallback(async () => {
+    setState('loading')
+    setError(null)
+    try {
+      const [tk, cp] = await Promise.all([
+        trainingV3.tasks({ page: 1, pageSize: 100, q: debouncedQ || undefined }),
+        trainingV3.competencies({ page: 1, pageSize: 100 }).catch(() => ({ items: [] })),
+      ])
+      setItems(tk.items)
+      setCompetencies((cp as { items: Competency[] }).items ?? [])
+      setState('success')
+    } catch (err) {
+      setError(err)
+      setState('error')
+    }
+  }, [debouncedQ])
+
+  useEffect(() => {
+    load()
+  }, [load])
+
+  const openCreate = () => {
+    setEditing(null)
+    setForm({ code: '', titleEn: '', titleAr: '', description: '', competencyId: '', expectedMinutes: '', status: 'ACTIVE' })
+    setSaveError(null)
+    setModalOpen(true)
   }
 
-  const filtered = students.filter(
-    (s) =>
-      s.name.toLowerCase().includes(search.toLowerCase()) ||
-      s.course.toLowerCase().includes(search.toLowerCase())
-  )
+  const openEdit = (task: PracticalTask) => {
+    const r = task as unknown as { title?: { en?: string; ar?: string }; description?: string; competencyId?: string; expectedMinutes?: number; status?: string }
+    setEditing(task)
+    setForm({
+      code: '', titleEn: r.title?.en ?? '', titleAr: r.title?.ar ?? '', description: r.description ?? '',
+      competencyId: r.competencyId ?? '', expectedMinutes: String(r.expectedMinutes ?? ''), status: r.status ?? 'ACTIVE',
+    })
+    setSaveError(null)
+    setModalOpen(true)
+  }
+
+  const save = async () => {
+    if (saving) return
+    setSaving(true)
+    setSaveError(null)
+    try {
+      if (editing) {
+        await trainingV3.updateTask(editing.id, {
+          title: { en: form.titleEn.trim(), ...(form.titleAr ? { ar: form.titleAr } : {}) },
+          ...(form.description ? { description: form.description } : {}),
+          ...(form.competencyId ? { competencyId: form.competencyId } : {}),
+          ...(form.expectedMinutes ? { expectedMinutes: Number(form.expectedMinutes) } : {}),
+          status: form.status as 'ACTIVE' | 'ARCHIVED',
+        })
+        showToast('success', 'Task updated', '')
+      } else {
+        if (!form.code.trim() || !form.titleEn.trim() || !form.competencyId || !form.expectedMinutes) {
+          setSaveError(new ApiError({ message: 'Code, English title, competency and expected minutes are required.', code: 'BAD_REQUEST', status: 400 }))
+          setSaving(false)
+          return
+        }
+        await trainingV3.createTask({
+          code: form.code.trim(),
+          title: { en: form.titleEn.trim(), ...(form.titleAr ? { ar: form.titleAr } : {}) },
+          ...(form.description ? { description: form.description } : {}),
+          competencyId: form.competencyId,
+          expectedMinutes: Number(form.expectedMinutes),
+        })
+        showToast('success', 'Task created', form.code.trim())
+      }
+      setModalOpen(false)
+      load()
+    } catch (err) {
+      if (err instanceof ApiError) setSaveError(err)
+      else showToast('error', 'Failed', backendErrorMessage(err))
+    } finally {
+      setSaving(false)
+    }
+  }
 
   return (
-    <div className="space-y-6">
-      <PageHeader
-        title={t('competencies.title')}
-        subtitle={t('competencies.subtitle')}
-        actions={<DemoBadge visible={mode === 'demo'} />}
-      />
-      {issueError && (
-        <div role="alert" className="px-4 py-3 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm">{issueError}</div>
-      )}
-
-      {/* Summary KPIs */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {[
-          { label: t('competencies.kpi.issued'), value: students.filter((s) => s.certStatus === 'issued').length, color: 'text-blue-600' },
-          { label: t('competencies.kpi.eligible'), value: students.filter((s) => s.certStatus === 'eligible').length, color: 'text-green-600' },
-          { label: t('competencies.kpi.inProgress'), value: students.filter((s) => s.certStatus === 'pending' || s.certStatus === 'not-eligible').length, color: 'text-amber-600' },
-          { label: t('competencies.kpi.total'), value: students.length, color: 'text-slate-700' },
-        ].map((kpi) => (
-          <div key={kpi.label} className="bg-white border border-slate-200 rounded-xl p-5">
-            <p className="text-sm text-slate-500 font-medium">{kpi.label}</p>
-            <p className={`text-3xl font-bold mt-1 ${kpi.color}`}>{kpi.value}</p>
-          </div>
-        ))}
+    <div className="bg-white border border-slate-200 rounded-xl">
+      <div className="flex items-center gap-3 px-4 py-3 border-b border-slate-100">
+        <div className="flex-1 min-w-[200px]"><SearchBar value={q} onChange={setQ} placeholder={t('f.search')} /></div>
+        {canManage && <Button size="sm" onClick={openCreate}>{t('comp.newTask')}</Button>}
+        <span className="text-xs text-slate-400 ms-auto">{items.length} tasks</span>
       </div>
-
-      <div className="flex items-center gap-3">
-        <SearchBar value={search} onChange={setSearch} placeholder={t('competencies.search')} />
-      </div>
-
-      <div className="bg-white border border-slate-200 rounded-xl overflow-hidden">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b border-slate-50">
-              <th className="px-6 py-3 text-start text-xs font-semibold text-slate-500 uppercase tracking-wide">{t('competencies.col.student')}</th>
-              <th className="px-6 py-3 text-start text-xs font-semibold text-slate-500 uppercase tracking-wide">{t('competencies.col.course')}</th>
-              <th className="px-6 py-3 text-start text-xs font-semibold text-slate-500 uppercase tracking-wide">{t('competencies.col.progress')}</th>
-              <th className="px-6 py-3 text-start text-xs font-semibold text-slate-500 uppercase tracking-wide">{t('competencies.col.certStatus')}</th>
-              <th className="px-6 py-3 text-start text-xs font-semibold text-slate-500 uppercase tracking-wide">{t('competencies.col.certNumber')}</th>
-              <th className="px-6 py-3 text-start text-xs font-semibold text-slate-500 uppercase tracking-wide">{t('competencies.col.actions')}</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filtered.map((s) => {
-              const cert = certBadge[s.certStatus]
-              return (
-                <tr
-                  key={s.id}
-                  onClick={() => setSelected(s)}
-                  className="border-b border-slate-50 last:border-0 hover:bg-slate-50 cursor-pointer"
-                >
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center text-xs font-bold">
-                        {s.name.split(' ').map((n) => n[0]).slice(0, 2).join('')}
-                      </div>
-                      <div>
-                        <p className="font-medium text-slate-800">{s.name}</p>
-                        <p className="text-xs text-slate-400" dir="ltr">{s.id}</p>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 text-slate-600">{s.course}</td>
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-2">
-                      <div className="h-1.5 w-24 bg-slate-100 rounded-full overflow-hidden">
-                        <div
-                          className={`h-full rounded-full ${s.completionPct === 100 ? 'bg-green-500' : s.completionPct >= 50 ? 'bg-blue-500' : 'bg-amber-500'}`}
-                          style={{ width: `${s.completionPct}%` }}
-                        />
-                      </div>
-                      <span className="text-xs font-medium text-slate-600">{s.completionPct}%</span>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${cert.cls}`}>
-                      {cert.label}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 font-mono text-xs text-slate-500" dir="ltr">{s.certNumber ?? '—'}</td>
-                  <td className="px-6 py-4">
-                    <div onClick={(e) => e.stopPropagation()}>
-                      {s.certStatus === 'eligible' && (
-                        <Button size="sm" loading={issuing} onClick={() => handleIssue(s.id)}>{t('competencies.action.issue')}</Button>
-                      )}
-                      {s.certStatus === 'issued' && (
-                        <Button size="sm" variant="secondary">{t('competencies.action.view')}</Button>
-                      )}
-                    </div>
-                  </td>
-                </tr>
-              )
-            })}
-          </tbody>
-        </table>
-      </div>
-
-      {/* Competency Detail Modal */}
-      {selected && (
-        <Modal
-          open={!!selected}
-          onClose={() => setSelected(null)}
-          title={`${selected.name} — Competency Record`}
-          size="lg"
-          footer={
-            <>
-              <Button variant="secondary" onClick={() => setSelected(null)}>{t('action.close')}</Button>
-              {selected.certStatus === 'eligible' && <Button loading={issuing} onClick={() => handleIssue(selected.id)}>{t('competencies.action.issue')}</Button>}
-            </>
-          }
-        >
-          <div className="flex flex-col gap-5">
-            {/* Header info */}
-            <div className="grid grid-cols-3 gap-3">
-              <div className="bg-slate-50 rounded-lg p-3">
-                <p className="text-xs text-slate-400">{t('competencies.detail.course')}</p>
-                <p className="mt-0.5 text-sm font-medium text-slate-800">{selected.course}</p>
-              </div>
-              <div className="bg-slate-50 rounded-lg p-3">
-                <p className="text-xs text-slate-400">{t('competencies.detail.completion')}</p>
-                <p className="mt-0.5 text-sm font-bold text-slate-800">{selected.completionPct}%</p>
-              </div>
-              <div className="bg-slate-50 rounded-lg p-3">
-                <p className="text-xs text-slate-400">{t('competencies.detail.certStatus')}</p>
-                <div className="mt-0.5">
-                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${certBadge[selected.certStatus].cls}`}>
-                    {certBadge[selected.certStatus].label}
-                  </span>
+      {state === 'loading' && <div className="p-4"><LoadingState /></div>}
+      {state === 'error' && <div className="p-4"><ErrorState error={error} onRetry={load} /></div>}
+      {state === 'success' && items.length === 0 && <div className="p-4"><EmptyState title={t('comp.noTasks')} /></div>}
+      {state === 'success' && items.length > 0 && (
+        <div className="divide-y divide-slate-50">
+          {items.map((task) => {
+            const r = task as unknown as { code?: string; title?: { en?: string; ar?: string }; expectedMinutes?: number; status?: string }
+            return (
+              <div key={task.id} className="px-4 py-3 flex items-center gap-3">
+                <div className="flex-1">
+                  <p className="font-medium text-sm">{locName(r.title, lang)} <span className="font-mono text-xs text-slate-400" dir="ltr">{r.code}</span></p>
+                  <p className="text-xs text-slate-400">~{r.expectedMinutes} min</p>
                 </div>
+                <Badge variant={badgeVariantFor(r.status ?? '')} />
+                {canManage && <Button variant="secondary" size="sm" onClick={() => openEdit(task)}>{t('f.edit')}</Button>}
               </div>
-            </div>
-
-            {selected.certNumber && (
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                <p className="text-sm font-semibold text-blue-800">{t('competencies.detail.certInfo')}</p>
-                <div className="grid grid-cols-2 gap-3 mt-2">
-                  <div>
-                    <p className="text-xs text-blue-600">{t('competencies.detail.certNumber')}</p>
-                    <p className="text-sm font-mono font-bold text-blue-800" dir="ltr">{selected.certNumber}</p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-blue-600">{t('competencies.detail.issueDate')}</p>
-                    <p className="text-sm font-semibold text-blue-800" dir="ltr">{selected.certDate}</p>
-                  </div>
-                </div>
-                <p className="text-xs text-blue-600 mt-2">{t('competencies.detail.verifyAt')} <span dir="ltr">wst.sa/verify/{selected.certNumber}</span></p>
-              </div>
-            )}
-
-            {/* Competency list */}
-            <div>
-              <h3 className="text-sm font-semibold text-slate-700 mb-3">
-                {t('competencies.detail.competenciesHeading')} ({selected.competencies.filter((c) => c.status === 'pass').length}/{selected.competencies.length} {t('competencies.detail.completed')})
-              </h3>
-              <div className="flex flex-col gap-2">
-                {selected.competencies.map((comp, i) => (
-                  <div key={i} className="flex items-center justify-between p-3 border border-slate-100 rounded-lg">
-                    <div className="flex items-center gap-3">
-                      <div className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 ${
-                        (comp.status as string) === 'pass' ? 'bg-green-100' :
-                        (comp.status as string) === 'fail' ? 'bg-red-100' :
-                        (comp.status as string) === 'needs-improvement' ? 'bg-amber-100' : 'bg-slate-100'
-                      }`}>
-                        {(comp.status as string) === 'pass' && <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#16a34a" strokeWidth="2.5"><polyline points="20 6 9 17 4 12" /></svg>}
-                        {(comp.status as string) === 'fail' && <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#dc2626" strokeWidth="2.5"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>}
-                        {(comp.status as string) === 'needs-improvement' && <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#d97706" strokeWidth="2.5"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" /></svg>}
-                        {(comp.status as string) === 'pending' && <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="2"><circle cx="12" cy="12" r="9" /></svg>}
-                      </div>
-                      <span className="text-sm text-slate-700">{comp.name}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Badge variant={comp.status as Parameters<typeof Badge>[0]['variant']} showDot={false} />
-                      {comp.signed ? (
-                        <span className="text-xs text-green-600">✓ {t('competencies.detail.signed')}</span>
-                      ) : (
-                        <span className="text-xs text-amber-600">{t('competencies.detail.unsigned')}</span>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </Modal>
+            )
+          })}
+        </div>
       )}
+      <Modal open={modalOpen} onClose={() => !saving && setModalOpen(false)} title={editing ? t('comp.editTask') : t('comp.newTask')} size="md"
+        footer={<><Button variant="secondary" disabled={saving} onClick={() => setModalOpen(false)}>Cancel</Button><Button disabled={saving} onClick={save}>{saving ? 'Saving…' : 'Save'}</Button></>}>
+        <div className="flex flex-col gap-3">
+          {!editing && <Input label="Code (unique)" value={form.code} onChange={(e) => setForm({ ...form, code: e.target.value })} required />}
+          <div className="grid grid-cols-2 gap-3">
+            <Input label={t('f.nameEn')} value={form.titleEn} onChange={(e) => setForm({ ...form, titleEn: e.target.value })} required />
+            <Input label={t('f.nameAr')} value={form.titleAr} onChange={(e) => setForm({ ...form, titleAr: e.target.value })} />
+          </div>
+          <Textarea label="Description" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} rows={2} />
+          <div className="grid grid-cols-2 gap-3">
+            <Select label={t('comp.tab.competencies')} value={form.competencyId} onChange={(e) => setForm({ ...form, competencyId: e.target.value })}
+              options={[{ value: '', label: 'Select' }, ...competencies.map((c) => ({ value: c.id, label: (c as unknown as { code?: string }).code ?? c.id }))]} required={!editing} />
+            <Input label={t('comp.expectedMinutes')} type="number" value={form.expectedMinutes} onChange={(e) => setForm({ ...form, expectedMinutes: e.target.value })} required={!editing} />
+          </div>
+          {editing && (
+            <Select label="Status" value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })}
+              options={[{ value: 'ACTIVE', label: 'Active' }, { value: 'ARCHIVED', label: 'Archived' }]} />
+          )}
+          {saveError ? <FieldErrors error={saveError} /> : null}
+        </div>
+      </Modal>
     </div>
   )
 }

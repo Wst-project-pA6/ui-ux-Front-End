@@ -2,7 +2,7 @@ import React from 'react'
 import { useLang } from '../../i18n/LanguageContext'
 import type { TranslationKey } from '../../i18n/translations'
 
-type BadgeVariant =
+export type BadgeVariant =
   | 'received'
   | 'in-progress'
   | 'quality-check'
@@ -20,6 +20,49 @@ type BadgeVariant =
   | 'active'
   | 'inactive'
   | 'default'
+
+/**
+ * Maps backend status strings (UPPER_SNAKE, any case) to a Badge variant.
+ * Unknown values fall back to 'default' — never crashes the UI.
+ */
+export function badgeVariantFor(raw?: string | null): BadgeVariant {
+  const s = String(raw ?? '').toUpperCase().replace(/-/g, '_')
+  switch (s) {
+    case 'ACTIVE':
+    case 'HEALTHY':
+      return 'active'
+    case 'ARCHIVED':
+    case 'INACTIVE':
+      return 'inactive'
+    case 'RECEIVED':
+      return 'received'
+    case 'IN_PROGRESS':
+      return 'in-progress'
+    case 'QUALITY_CHECK':
+      return 'quality-check'
+    case 'READY':
+      return 'ready'
+    case 'DELIVERED':
+      return 'delivered'
+    case 'PENDING':
+    case 'PENDING_APPROVAL':
+      return 'pending'
+    case 'APPROVED':
+    case 'PASSED':
+      return 'approved'
+    case 'REJECTED':
+    case 'FAILED':
+      return 'rejected'
+    case 'LOW_STOCK':
+    case 'BELOW_MINIMUM':
+      return 'low-stock'
+    case 'OUT_OF_STOCK':
+    case 'STOCKED_OUT':
+      return 'out-of-stock'
+    default:
+      return 'default'
+  }
+}
 
 const variantStyles: Record<BadgeVariant, string> = {
   received: 'bg-blue-50 text-blue-700 border border-blue-200',

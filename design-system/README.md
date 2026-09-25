@@ -1,60 +1,36 @@
-# WST Design System — Figma Import Pack
+# WST Design System
 
-Exported from the WST frontend (`src/pages/DesignSystem.tsx`, `src/index.css`,
-`src/components/ui/*`). One honest note first:
+Foundational tokens, type styles, and component library for the Workshop &
+Training (WST) frontend.
 
-> **Figma's `.fig` format is proprietary binary and cannot be authored outside
-> Figma.** There is no tool that writes a real `.fig` file. This folder is the
-> standard importable equivalent: W3C design tokens + a step-by-step import
-> guide. After import, publish it as a Figma library (`WST Design System`).
+> This is a project resource and documentation section. It is **not** a
+> Workshop Manager feature and is not part of the application navigation.
+
+- Version: `v1.0.0`
+- Typeface: Inter (weights 400 / 500 / 600 / 700)
+- CSS framework: Tailwind CSS v4
+- Spacing scale: 4px base grid
 
 ## Contents
 
-| File | Purpose |
-|---|---|
-| `wst-design-tokens.json` | Full token set (W3C DTCG format): color, font, typography, spacing, radius, shadow + Button/Badge/Input/Card/Table/Modal specs + RTL rules |
-| `colors.md` | Human-readable color variables (base, text, accent, sidebar, status) |
+| File | Covers |
+| ---- | ------ |
+| `colors.md` | Color variables (base, text, accent, sidebar, status) |
 | `typography.md` | Text styles (page title → table body) |
-| `components.md` | Button, badge, input, card, and table component specs |
+| `components.md` | Button, badge, input, card, and table components |
 | `spacing.md` | Spacing scale and border-radius tokens |
 | `icons.md` | Icon usage and navigation icon set |
-| `guidelines.md` | Interaction, form, state, RTL, and permission rules |
+| `guidelines.md` | Usage rules (effects, focus, RTL, do / don't) |
 
-> This folder is a project resource and documentation section. It is **not**
-> a Workshop Manager feature and is not part of the application navigation.
+## CSS variable reference
 
-## Option A — Tokens Studio for Figma (recommended, 5 minutes)
+```
+--wst-space-4 / 8 / 12 / 16 / 20 / 24
+--wst-radius-sm (8px) / -md (12px) / -full
+--wst-shadow-card
+--wst-focus-ring
+```
 
-1. In Figma, install the **Tokens Studio for Figma** plugin.
-2. Open the plugin → Settings → Sync providers → **JSON file / URL** → load
-   `wst-design-tokens.json` (or paste its contents with **Import → File**).
-3. Token sets map 1:1: `color/*`, `font/*`, `typography/*`, `spacing/*`,
-   `radius/*`, `shadow/*`.
-4. Apply tokens to fresh styles: select the token groups → **Create styles**
-   (Color styles from `color/*`, Text styles from `typography/*`,
-   Effect styles from `shadow/*`).
-5. Publish the file as a team **Library** so all WST screens consume it.
-
-## Option B — Native Figma Variables (no plugin)
-
-1. Create a file `WST Design System` with two collections:
-   - **WST / Color** — one variable per `color.*` token (paste hexes).
-   - **WST / Number** — `spacing.*` and `radius.*` values.
-2. **Text styles**: 8 styles from `typography.*` (Inter 400/500/600/700;
-   Arabic styles use Noto Sans Arabic).
-3. **Effect styles**: `card` and `focus-ring` from `shadow.*`.
-4. **Components**: build variants from `component.*`:
-   - Button (Primary/Secondary/Ghost/Danger/Disabled × sm/md/icon)
-   - Badge (16 variants listed in the JSON — pill `9999px` + 6px dot)
-   - Input (Default/Icon/Error/Disabled/Select/Textarea), Card, Table, Modal.
-
-## RTL rule (WST-FR-02)
-
-`dir=rtl` on `<html>` for Arabic; identifiers — job numbers, VINs, plates,
-SKUs, amounts, phones — **always LTR** (`dir="ltr"`), never translated or
-reordered. Documented in the JSON under `rtl`.
-
-## Source of truth
-
-The JSON mirrors the shipped code. If tokens change, edit the code first
-(`index.css` custom properties + `components/ui/*`), then re-export here.
+Color tokens live in `@theme` as `--color-wst-*` and map to Tailwind utility
+classes. Spacing and radius tokens are declared on `:root` and used via inline
+`style` props or global CSS.

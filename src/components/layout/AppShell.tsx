@@ -1,14 +1,14 @@
 import React, { useState, useEffect } from 'react'
 import { Outlet, useLocation, NavLink, useNavigate } from 'react-router-dom'
 import { useLang } from '../../i18n/LanguageContext'
-import { useRole } from '../../context/RoleContext'
 import { useAuth } from '../../context/AuthContext'
+import { canAccessPath, initialsFor } from '../../auth/access'
 import type { TranslationKey } from '../../i18n/translations'
 import { Sidebar } from './Sidebar'
-import { NAV_ITEMS, filterNavItems, type NavItem } from '../../config/nav'
+import { NotificationBell } from '../notifications/NotificationBell'
 
-// All page-title keys — every route now resolved through t()
-const pageTitleKeys: Record<string, TranslationKey> = {
+// Page titles — includes role-specific pages
+const pageTitleKeys: Record<string, string> = {
   '/dashboard': 'nav.dashboard',
   '/customers': 'nav.customers',
   '/vehicles': 'nav.vehicles',
@@ -21,23 +21,323 @@ const pageTitleKeys: Record<string, TranslationKey> = {
   '/reports': 'nav.reports',
   '/ai-insights': 'nav.aiInsights',
   '/settings': 'nav.settings',
-  '/my-jobs': 'nav.myJobs',
-  '/my-training': 'nav.myTraining',
-  '/invoices': 'nav.invoices',
+  '/my-jobs': 'My Assigned Jobs',
+  '/my-training': 'My Training',
+  '/invoices': 'Invoices',
   '/role-matrix': 'nav.roleMatrix',
+  '/bays': 'Bays',
+  '/service-types': 'Service Types',
+  '/technician-profiles': 'Technicians',
+  '/operating-hours': 'Operating Hours',
+  '/notifications': 'Notifications',
+  '/audit-log': 'Audit Log',
+  '/certificates': 'Certificates',
+  '/change-password': 'Change Password',
 }
 
-// NavList is defined at module scope so it is never recreated on AppShell re-renders.
-interface NavListProps {
-  items: NavItem[]
-  onClose?: () => void
+interface NavItem {
+  label: string
+  labelKey?: TranslationKey
+  path: string
+  icon: React.ReactNode
 }
 
-function NavList({ items, onClose }: NavListProps) {
-  const { t } = useLang()
-  return (
+const ALL_NAV_ITEMS: NavItem[] = [
+  {
+    labelKey: 'nav.dashboard',
+    label: 'Dashboard',
+    path: '/dashboard',
+    icon: (
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+        <rect x="3" y="3" width="7" height="7" rx="1" /><rect x="14" y="3" width="7" height="7" rx="1" />
+        <rect x="3" y="14" width="7" height="7" rx="1" /><rect x="14" y="14" width="7" height="7" rx="1" />
+      </svg>
+    ),
+  },
+  {
+    labelKey: 'nav.customers',
+    label: 'Customers',
+    path: '/customers',
+    icon: (
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" />
+        <path d="M23 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" />
+      </svg>
+    ),
+  },
+  {
+    labelKey: 'nav.vehicles',
+    label: 'Vehicles',
+    path: '/vehicles',
+    icon: (
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M5 17H3a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v9a2 2 0 0 1-2 2h-3" />
+        <circle cx="7.5" cy="17.5" r="2.5" /><circle cx="17.5" cy="17.5" r="2.5" />
+      </svg>
+    ),
+  },
+  {
+    labelKey: 'nav.jobCards',
+    label: 'Job Cards',
+    path: '/job-cards',
+    icon: (
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+        <polyline points="14 2 14 8 20 8" /><line x1="16" y1="13" x2="8" y2="13" /><line x1="16" y1="17" x2="8" y2="17" />
+      </svg>
+    ),
+  },
+  {
+    labelKey: 'nav.inventory',
+    label: 'Inventory',
+    path: '/inventory',
+    icon: (
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
+        <polyline points="3.27 6.96 12 12.01 20.73 6.96" /><line x1="12" y1="22.08" x2="12" y2="12" />
+      </svg>
+    ),
+  },
+  {
+    labelKey: 'nav.purchasing',
+    label: 'Purchasing',
+    path: '/purchasing',
+    icon: (
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z" />
+        <line x1="3" y1="6" x2="21" y2="6" /><path d="M16 10a4 4 0 0 1-8 0" />
+      </svg>
+    ),
+  },
+  {
+    labelKey: 'nav.training',
+    label: 'Training',
+    path: '/training',
+    icon: (
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M22 10v6M2 10l10-5 10 5-10 5z" /><path d="M6 12v5c3 3 9 3 12 0v-5" />
+      </svg>
+    ),
+  },
+  {
+    labelKey: 'nav.assessments',
+    label: 'Assessments',
+    path: '/assessments',
+    icon: (
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M9 11l3 3L22 4" /><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />
+      </svg>
+    ),
+  },
+  {
+    labelKey: 'nav.competencies',
+    label: 'Competencies',
+    path: '/competencies',
+    icon: (
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+        <circle cx="12" cy="8" r="6" /><path d="M15.477 12.89L17 22l-5-3-5 3 1.523-9.11" />
+      </svg>
+    ),
+  },
+  {
+    labelKey: 'nav.reports',
+    label: 'Reports',
+    path: '/reports',
+    icon: (
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+        <line x1="18" y1="20" x2="18" y2="10" /><line x1="12" y1="20" x2="12" y2="4" />
+        <line x1="6" y1="20" x2="6" y2="14" /><line x1="2" y1="20" x2="22" y2="20" />
+      </svg>
+    ),
+  },
+  {
+    labelKey: 'nav.aiInsights',
+    label: 'AI Insights',
+    path: '/ai-insights',
+    icon: (
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M12 2a2 2 0 0 1 2 2c0 .74-.4 1.39-1 1.73V7h1a7 7 0 0 1 7 7h1a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-1v1a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-1H2a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1h1a7 7 0 0 1 7-7h1V5.73c-.6-.34-1-.99-1-1.73a2 2 0 0 1 2-2z" />
+      </svg>
+    ),
+  },
+  {
+    labelKey: 'nav.settings',
+    label: 'Settings',
+    path: '/settings',
+    icon: (
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+        <circle cx="12" cy="12" r="3" />
+        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+      </svg>
+    ),
+  },
+  {
+    labelKey: 'nav.roleMatrix',
+    label: 'Role Matrix',
+    path: '/role-matrix',
+    icon: (
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+        <rect x="3" y="3" width="18" height="18" rx="2" />
+        <line x1="3" y1="9" x2="21" y2="9" />
+        <line x1="3" y1="15" x2="21" y2="15" />
+        <line x1="9" y1="3" x2="9" y2="21" />
+        <line x1="15" y1="3" x2="15" y2="21" />
+      </svg>
+    ),
+  },
+  // Role-specific pages
+  {
+    label: 'My Assigned Jobs',
+    path: '/my-jobs',
+    icon: (
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+        <polyline points="14 2 14 8 20 8" /><polyline points="9 15 11 17 15 13" />
+      </svg>
+    ),
+  },
+  {
+    label: 'My Training',
+    path: '/my-training',
+    icon: (
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M22 10v6M2 10l10-5 10 5-10 5z" /><path d="M6 12v5c3 3 9 3 12 0v-5" />
+      </svg>
+    ),
+  },
+  {
+    label: 'Invoices & Reports',
+    path: '/invoices',
+    icon: (
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+        <polyline points="14 2 14 8 20 8" /><line x1="16" y1="13" x2="8" y2="13" /><line x1="16" y1="17" x2="8" y2="17" />
+      </svg>
+    ),
+  },
+  {
+    label: 'Notifications',
+    path: '/notifications',
+    icon: (
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+        <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+      </svg>
+    ),
+  },
+  {
+    label: 'Audit Log',
+    path: '/audit-log',
+    icon: (
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+        <polyline points="14 2 14 8 20 8" />
+      </svg>
+    ),
+  },
+  {
+    label: 'Bays',
+    path: '/bays',
+    icon: (
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+        <rect x="3" y="3" width="18" height="18" rx="2" />
+        <line x1="3" y1="9" x2="21" y2="9" />
+      </svg>
+    ),
+  },
+  {
+    label: 'Service Types',
+    path: '/service-types',
+    icon: (
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+        <circle cx="12" cy="12" r="3" />
+        <path d="M12 2v4M12 18v4M2 12h4M18 12h4" />
+      </svg>
+    ),
+  },
+  {
+    label: 'Technicians',
+    path: '/technician-profiles',
+    icon: (
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+        <circle cx="9" cy="7" r="4" />
+      </svg>
+    ),
+  },
+  {
+    label: 'Operating Hours',
+    path: '/operating-hours',
+    icon: (
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+        <circle cx="12" cy="12" r="10" />
+        <polyline points="12 6 12 12 16 14" />
+      </svg>
+    ),
+  },
+  {
+    label: 'Certificates',
+    path: '/certificates',
+    icon: (
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+        <circle cx="12" cy="8" r="6" />
+        <path d="M15.477 12.89L17 22l-5-3-5 3 1.523-9.11" />
+      </svg>
+    ),
+  },
+]
+
+export function AppShell() {
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
+  const [drawerOpen, setDrawerOpen] = useState(false)
+  const location = useLocation()
+  const navigate = useNavigate()
+  const { t, lang, setLang } = useLang()
+  const { me, permissions, roles, logout } = useAuth()
+
+  const filteredNavItems = ALL_NAV_ITEMS.filter((item) => canAccessPath(permissions, item.path))
+
+  useEffect(() => {
+    setDrawerOpen(false)
+  }, [location.pathname])
+
+  useEffect(() => {
+    if (drawerOpen) {
+      document.body.style.overflow = 'hidden'
+    } else {
+      document.body.style.overflow = ''
+    }
+    return () => { document.body.style.overflow = '' }
+  }, [drawerOpen])
+
+  // Real backend identity — roles shown for display; permissions gate access.
+  const displayName = me?.displayName ?? me?.email ?? 'Signed in'
+  const displaySub = roles.length > 0 ? roles.join(', ') : (me?.email ?? '')
+  const initials = initialsFor(me?.displayName)
+
+  const handleLogout = async () => {
+    await logout()
+    navigate('/', { replace: true })
+  }
+
+  const rawTitle = pageTitleKeys[location.pathname]
+  const pageTitle = rawTitle
+    ? rawTitle.startsWith('nav.')
+      ? t(rawTitle as TranslationKey)
+      : rawTitle
+    : 'WST'
+
+  const now = new Date()
+  const dateStr = now.toLocaleDateString(lang === 'ar' ? 'ar-SA' : 'en-US', {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  })
+
+  const NavList = ({ onClose }: { onClose?: () => void }) => (
     <>
-      {items.map((item) => (
+      {filteredNavItems.map((item) => (
         <NavLink
           key={item.path}
           to={item.path}
@@ -51,77 +351,26 @@ function NavList({ items, onClose }: NavListProps) {
           }
         >
           <span className="shrink-0">{item.icon}</span>
-          <span className="text-sm font-medium">{t(item.key)}</span>
+          <span className="text-sm font-medium">
+            {item.labelKey ? t(item.labelKey) : item.label}
+          </span>
         </NavLink>
       ))}
     </>
   )
-}
-
-export function AppShell() {
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
-  const [drawerOpen, setDrawerOpen] = useState(false)
-  const [notifOpen, setNotifOpen] = useState(false)
-  const location = useLocation()
-  const navigate = useNavigate()
-  const { t, lang, setLang } = useLang()
-  const { role, config } = useRole()
-  const { signOut } = useAuth()
-  const { hasPermission } = useAuth()
-
-  const handleLogout = async () => {
-    // Contract: POST /auth/logout revokes the refresh-token family (best-effort).
-    // Replace history so Back never re-exposes authenticated content.
-    try { await signOut() } finally { navigate('/', { replace: true }) }
-  }
-
-  // Identical filter used by desktop Sidebar (via filterNavItems) and mobile drawer
-  const filteredNavItems = filterNavItems(NAV_ITEMS, role, config.allowedPaths, hasPermission)
-
-  useEffect(() => {
-    setDrawerOpen(false)
-    setNotifOpen(false)
-  }, [location.pathname])
-
-  useEffect(() => {
-    if (drawerOpen) {
-      document.body.style.overflow = 'hidden'
-    } else {
-      document.body.style.overflow = ''
-    }
-    return () => { document.body.style.overflow = '' }
-  }, [drawerOpen])
-
-  const resolvePageTitle = (pathname: string): string => {
-    const key = pageTitleKeys[pathname]
-    if (key) return t(key)
-    const baseKey = pageTitleKeys['/' + pathname.split('/').filter(Boolean)[0]]
-    if (baseKey) return t(baseKey)
-    return 'WST'
-  }
-  const pageTitle = resolvePageTitle(location.pathname)
-
-  const now = new Date()
-  const dateStr = now.toLocaleDateString(
-    lang === 'ar' ? 'ar-SA-u-ca-gregory' : 'en-US',
-    { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' },
-  )
-
-  const notifications = [
-    { msg: t('topbar.notif1'), time: t('topbar.2mAgo'), type: 'warning' as const },
-    { msg: t('topbar.notif2'), time: t('topbar.15mAgo'), type: 'info' as const },
-    { msg: t('topbar.notif3'), time: t('topbar.1hAgo'), type: 'error' as const },
-    { msg: t('topbar.notif4'), time: t('topbar.2hAgo'), type: 'warning' as const },
-  ]
-
-  const notifTypeColor = (type: 'warning' | 'info' | 'error') =>
-    type === 'warning' ? 'bg-amber-400' : type === 'error' ? 'bg-red-400' : 'bg-blue-400'
 
   return (
-    <div className="flex h-dvh overflow-hidden bg-slate-50">
+    <div className="flex h-screen overflow-hidden bg-slate-50">
       {/* Desktop sidebar — hidden on mobile */}
       <div className="hidden md:flex h-full shrink-0">
-        <Sidebar collapsed={sidebarCollapsed} />
+        <Sidebar
+          collapsed={sidebarCollapsed}
+          filteredPaths={filteredNavItems.map((i) => i.path)}
+          displayName={displayName}
+          displaySub={displaySub}
+          initials={initials}
+          onLogout={handleLogout}
+        />
       </div>
 
       {/* Mobile drawer overlay */}
@@ -155,31 +404,30 @@ export function AppShell() {
           </div>
           <button
             onClick={() => setDrawerOpen(false)}
-            aria-label={t('appshell.closeNav')}
             className="w-8 h-8 flex items-center justify-center rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white transition-colors"
           >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
               <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
             </svg>
           </button>
         </div>
 
-        {/* Role badge */}
+        {/* Identity badge in drawer — from GET /auth/me */}
         <div className="px-4 py-2 border-b border-slate-800">
           <div className="flex items-center gap-2 px-3 py-2 bg-blue-600/20 rounded-lg">
             <div className="w-6 h-6 rounded-full bg-blue-600 flex items-center justify-center text-white text-xs font-bold shrink-0">
-              {config.initials}
+              {initials}
             </div>
             <div className="min-w-0">
-              <p className="text-white text-xs font-semibold truncate">{config.userName}</p>
-              <p className="text-blue-300 text-xs truncate">{config.userLabel}</p>
+              <p className="text-white text-xs font-semibold truncate">{displayName}</p>
+              <p className="text-blue-300 text-xs truncate">{displaySub}</p>
             </div>
           </div>
         </div>
 
-        {/* Nav — uses the same filtered items as the desktop sidebar */}
+        {/* Nav */}
         <nav className="flex-1 py-3 overflow-y-auto">
-          <NavList items={filteredNavItems} onClose={() => setDrawerOpen(false)} />
+          <NavList onClose={() => setDrawerOpen(false)} />
         </nav>
 
         {/* Language + logout */}
@@ -218,68 +466,35 @@ export function AppShell() {
         <header className="hidden md:flex h-14 bg-white border-b border-slate-100 items-center px-6 gap-4 shrink-0">
           <button
             onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-            aria-label={sidebarCollapsed ? t('appshell.expandSidebar') : t('appshell.collapseSidebar')}
             className="w-8 h-8 flex items-center justify-center rounded-lg text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition-colors"
           >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
               <line x1="3" y1="6" x2="21" y2="6" /><line x1="3" y1="12" x2="21" y2="12" /><line x1="3" y1="18" x2="21" y2="18" />
             </svg>
           </button>
 
           <div className="flex-1">
-            {/* Date is inherently LTR in both languages after the Gregorian calendar fix */}
             <span className="text-sm text-slate-400" dir="ltr">{dateStr}</span>
           </div>
 
-          {/* Notifications */}
-          <div className="relative">
-            <button
-              onClick={() => setNotifOpen(!notifOpen)}
-              aria-label={t('topbar.notifications')}
-              aria-expanded={notifOpen}
-              aria-haspopup="true"
-              className="w-8 h-8 flex items-center justify-center rounded-lg text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition-colors relative"
-            >
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
-                <path d="M13.73 21a2 2 0 0 1-3.46 0" />
-              </svg>
-              <span className="absolute top-1.5 end-1.5 w-2 h-2 bg-red-500 rounded-full" aria-hidden="true" />
-            </button>
-            {notifOpen && (
-              <div className="absolute end-0 top-10 w-80 bg-white border border-slate-200 rounded-xl shadow-lg z-50 py-2">
-                <div className="px-4 py-2 border-b border-slate-100">
-                  <p className="text-sm font-semibold text-slate-900">{t('topbar.notifications')}</p>
-                </div>
-                {notifications.map((n, i) => (
-                  <div key={i} className="px-4 py-3 hover:bg-slate-50 cursor-pointer flex items-start gap-3">
-                    <div className={`w-2 h-2 rounded-full mt-1.5 shrink-0 ${notifTypeColor(n.type)}`} />
-                    <div>
-                      <p className="text-sm text-slate-700">{n.msg}</p>
-                      <p className="text-xs text-slate-400 mt-0.5">{n.time}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
+          {/* Notifications — live bell (polls every 45s, unread badge) */}
+          <NotificationBell />
 
-          {/* User */}
+          {/* User — backend identity + logout */}
           <div className="flex items-center gap-2 ps-2 border-s border-slate-100">
             <div className="w-7 h-7 rounded-full bg-blue-600 flex items-center justify-center text-white text-xs font-bold">
-              {config.initials}
+              {initials}
             </div>
             <div className="hidden sm:block">
-              <p className="text-sm font-medium text-slate-700">{config.userName}</p>
-              <p className="text-xs text-slate-400 leading-none">{config.userLabel}</p>
+              <p className="text-sm font-medium text-slate-700 max-w-[160px] truncate">{displayName}</p>
+              <p className="text-xs text-slate-400 leading-none max-w-[160px] truncate">{displaySub}</p>
             </div>
             <button
               onClick={handleLogout}
               title={t('nav.logout')}
-              aria-label={t('nav.logout')}
               className="w-8 h-8 flex items-center justify-center rounded-lg text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition-colors"
             >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
                 <polyline points="16 17 21 12 16 7" /><line x1="21" y1="12" x2="9" y2="12" />
               </svg>
@@ -291,11 +506,9 @@ export function AppShell() {
         <header className="md:hidden h-14 bg-white border-b border-slate-100 flex items-center px-4 gap-3 shrink-0 z-30">
           <button
             onClick={() => setDrawerOpen(true)}
-            aria-label={t('appshell.openNav')}
-            aria-expanded={drawerOpen}
             className="w-10 h-10 flex items-center justify-center rounded-xl text-slate-500 hover:bg-slate-100 transition-colors"
           >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
               <line x1="3" y1="6" x2="21" y2="6" /><line x1="3" y1="12" x2="21" y2="12" /><line x1="3" y1="18" x2="21" y2="18" />
             </svg>
           </button>
@@ -305,39 +518,9 @@ export function AppShell() {
           </div>
 
           <div className="flex items-center gap-1">
-            <div className="relative">
-              <button
-                onClick={() => setNotifOpen(!notifOpen)}
-                aria-label={t('topbar.notifications')}
-                aria-expanded={notifOpen}
-                aria-haspopup="true"
-                className="w-10 h-10 flex items-center justify-center rounded-xl text-slate-500 hover:bg-slate-100 transition-colors relative"
-              >
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                  <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
-                  <path d="M13.73 21a2 2 0 0 1-3.46 0" />
-                </svg>
-                <span className="absolute top-2 end-2 w-2 h-2 bg-red-500 rounded-full" aria-hidden="true" />
-              </button>
-              {notifOpen && (
-                <div className="absolute end-0 top-12 w-80 max-w-[calc(100vw-2rem)] bg-white border border-slate-200 rounded-2xl shadow-xl z-50 py-2">
-                  <div className="px-4 py-2.5 border-b border-slate-100">
-                    <p className="text-sm font-semibold text-slate-900">{t('topbar.notifications')}</p>
-                  </div>
-                  {notifications.map((n, i) => (
-                    <div key={i} className="px-4 py-3 hover:bg-slate-50 cursor-pointer flex items-start gap-3">
-                      <div className={`w-2 h-2 rounded-full mt-1.5 shrink-0 ${notifTypeColor(n.type)}`} />
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm text-slate-700 leading-snug">{n.msg}</p>
-                        <p className="text-xs text-slate-400 mt-0.5">{n.time}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
+            <NotificationBell />
             <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-white text-xs font-bold ms-1">
-              {config.initials}
+              {initials}
             </div>
           </div>
         </header>

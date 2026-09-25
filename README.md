@@ -6,26 +6,28 @@ competencies, reporting, and AI/data insights — bilingual (EN/AR with RTL).
 
 ## Backend contract
 
-The backend (`Wst-project-pA6/app`, NestJS, OpenAPI `WST_OpenAPI_Contract_FROZEN`)
-is the source of truth for all API integrations. The frontend never invents
-endpoints, payloads, or permissions:
+The backend (`Wst-project-pA6/app`, NestJS) is the source of truth for all
+API integrations. The frontend never invents endpoints, payloads, or
+permissions:
 
-- Contract-first client: `src/api/` (`config`, `http` with Bearer JWT +
-  `Accept-Language` + Idempotency-Key + single-flight 401→refresh→retry,
-  `auth`, `resources` — one function per used operationId, `hooks`
-  with loading / typed-error / empty / offline-fallback, `mapping`,
-  `types`)
-- Auth: live session via `GET /auth/me` (`src/context/AuthContext`);
-  offline demo fallback ONLY when the backend is unreachable (status 0),
-  always labeled with `DemoBadge`
-- Dev: `VITE_API_BASE_URL` (see `.env.example`); `vite.config.ts` proxies
-  `/api` → `http://localhost:3000` (override with `WST_API_PROXY_TARGET`)
+- Typed API client: `src/api/client.ts` (JWT bearer + refresh retry,
+  `Accept-Language` negotiation)
+- Verified endpoint wrappers: `src/api/endpoints.ts` (paths verified against
+  the backend NestJS controllers)
+- Auth: `POST /auth/login` → token pair → `localStorage`
+  (`src/api/tokenStorage.ts`)
+- Dev proxy: `vite.config.ts` forwards `/api` to `http://localhost:3000`
+  (override with `WST_API_PROXY_TARGET`); production base URL via
+  `VITE_API_BASE_URL` (see `.env.example`)
+
+If the backend is unreachable, the app runs in explicit demo mode with local
+seed data and labels it as such — never a fake success.
 
 ## Roles & navigation
 
 | Role | Home | Access |
 | ---- | ---- | ------ |
-| Workshop Manager | `/dashboard` | Dashboard, customers, vehicles, job cards, inventory, purchasing, assessments, competencies, reports, AI insights, settings (users/general/security) |
+| Workshop Manager | `/dashboard` | Dashboard, customers, vehicles, job cards, inventory, purchasing, assessments, competencies, reports, AI insights, settings |
 | Service Advisor | `/job-cards` | Job cards, customers, vehicles |
 | Technician / QC | `/my-jobs` | Assigned jobs |
 | Storekeeper / Procurement | `/inventory` | Inventory, purchasing |
@@ -44,22 +46,17 @@ browse) and Training Supervisor (management). The permission matrix lives at
 - `npm run build` — production build
 - `npm run preview` — preview production build
 - `npm run format` — format with oxfmt
-- `node scripts/capture-wireframes.mjs` — capture `wireframes/` screenshots
-  (requires preview server on :4173; uses installed Chrome via playwright-core)
-- `node scripts/smoke-test.mjs` — button sweep + key flows against preview
 
 ## Project layout
 
 ```
 src/
-  api/            contract-bound backend client + hooks + mapping
+  api/            verified backend client + endpoints + query hook
   components/     layout (AppShell/Sidebar), ui primitives, settings
-  config/         central navigation definition
-  context/        auth session + role-based access (visibility only)
+  context/        role-based access (frontend visibility only)
   i18n/           English/Arabic translations + RTL
-  pages/          one module per route (+ SignUp/ForgotPassword demo-labeled)
-  utils/          csv export, demo auth helpers
-design-system/    tokens (W3C DTCG JSON) + documentation (not a route)
+  pages/          one module per route
+  utils/          csv export helpers
+design-system/    tokens + component documentation (not a route)
 wireframes/       screenshots of the final screens
-reports/          task completion reports
 ```

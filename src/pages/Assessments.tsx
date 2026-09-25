@@ -1,245 +1,253 @@
-import React, { useState } from 'react'
-import { PageHeader, SearchBar } from '../components/ui/PageHeader'
-import { Badge } from '../components/ui/Badge'
+import { useCallback, useEffect, useState } from 'react'
+import { PageHeader } from '../components/ui/PageHeader'
+import { Badge, badgeVariantFor } from '../components/ui/Badge'
 import { Button } from '../components/ui/Button'
 import { Modal } from '../components/ui/Modal'
+import { Input, Select, Textarea } from '../components/ui/Input'
+import { useToast } from '../components/ui/Toast'
 import { useLang } from '../i18n/LanguageContext'
-import { assessmentsApi } from '../api/resources'
-import { ApiError } from '../api/http'
-import { DemoBadge } from '../components/ui/ApiState'
 import { useAuth } from '../context/AuthContext'
+import { trainingV3, type Assessment } from '../api/v6/training'
+import { PERMS, backendErrorMessage } from '../api/v3/types'
+import { ApiError } from '../api/errors'
+import { LoadingState, EmptyState, ErrorState, FieldErrors } from '../components/common/ApiStates'
 
-type AttendanceStatus = 'present' | 'absent' | 'late'
-type AssessmentResult = 'pass' | 'fail' | 'needs-improvement'
+const PAGE_SIZE = 20
 
-const INITIAL_ASSESSMENTS = [
-  { id: 'ASS-001', student: 'Abdullah Al-Faraj', course: 'Engine Overhaul Basics', session: 'SES-001', task: 'Oil Change Procedure', attendance: 'present' as AttendanceStatus, result: 'pass' as AssessmentResult, timeOnTask: '45 min', signed: true, mentor: 'Eng. Sami Al-Rashidi', date: 'Sep 19, 2024' },
-  { id: 'ASS-002', student: 'Lama Al-Saqr', course: 'Brake System Inspection', session: 'SES-002', task: 'Brake Pad Measurement', attendance: 'present' as AttendanceStatus, result: 'needs-improvement' as AssessmentResult, timeOnTask: '62 min', signed: false, mentor: 'Eng. Fatima Hassan', date: 'Sep 19, 2024' },
-  { id: 'ASS-003', student: 'Turki Al-Dosari', course: 'Engine Overhaul Basics', session: 'SES-001', task: 'Oil Change Procedure', attendance: 'late' as AttendanceStatus, result: 'pass' as AssessmentResult, timeOnTask: '55 min', signed: true, mentor: 'Eng. Sami Al-Rashidi', date: 'Sep 19, 2024' },
-  { id: 'ASS-004', student: 'Maha Al-Otaibi', course: 'Electrical Diagnostics & ECU', session: 'SES-003', task: 'OBD-II Fault Reading', attendance: 'present' as AttendanceStatus, result: 'pass' as AssessmentResult, timeOnTask: '38 min', signed: false, mentor: 'Eng. Waleed Khatib', date: 'Sep 18, 2024' },
-  { id: 'ASS-005', student: 'Abdullah Al-Faraj', course: 'Engine Overhaul Basics', session: 'SES-001', task: 'Air Filter Inspection', attendance: 'absent' as AttendanceStatus, result: 'fail' as AssessmentResult, timeOnTask: '—', signed: false, mentor: 'Eng. Sami Al-Rashidi', date: 'Sep 17, 2024' },
-]
-
-const attendanceBadgeStyle: Record<AttendanceStatus, string> = {
-  present: 'bg-green-50 text-green-700 border border-green-200',
-  absent: 'bg-red-50 text-red-700 border border-red-200',
-  late: 'bg-amber-50 text-amber-700 border border-amber-200',
-}
-
+/**
+ * Assessments — mentors record/correct (training.assess); the supervisor
+ * signs off or returns (training.signoff). A mentor can never sign off
+ * their own assessment: sign-off requires the supervisor role server-side.
+ */
 export default function Assessments() {
   const { t } = useLang()
-  const { mode } = useAuth()
-  const [search, setSearch] = useState('')
-  const [assessments, setAssessments] = useState(INITIAL_ASSESSMENTS)
-  const [detailOpen, setDetailOpen] = useState(false)
-  const [selected, setSelected] = useState<(typeof INITIAL_ASSESSMENTS)[0] | null>(null)
-  const [signing, setSigning] = useState(false)
-  const [signError, setSignError] = useState('')
+  const { showToast } = useToast()
+  const { me, hasPermission } = useAuth()
+  const canAssess = hasPermission(PERMS.trainingAssess)
+  const canSignoff = hasPermission(PERMS.trainingSignoff)
 
-  // Supervisor sign-off (WST-FR-11): POST /assessments/{id}/sign-off.
-  // Unsigned results stay pending and cannot count toward certification.
-  const handleSignOff = async (id: string) => {
-    setSigning(true)
-    setSignError('')
+  const [items, setItems] = useState<Assessment[]>([])
+  const [meta, setMeta] = useState({ page: 1, pageSize: PAGE_SIZE, totalItems: 0, totalPages: 1 })
+  const [page, setPage] = useState(1)
+  const [signOffStatus, setSignOffStatus] = useState('')
+  const [result, setResult] = useState('')
+  const [state, setState] = useState<'idle' | 'loading' | 'success' | 'error'>('idle')
+  const [error, setError] = useState<unknown>(null)
+
+  const [createOpen, setCreateOpen] = useState(false)
+  const [form, setForm] = useState({ sessionId: '', studentId: '', taskId: '', result: 'PASS', timeOnTaskMinutes: '', mentorNote: '' })
+  const [saving, setSaving] = useState(false)
+  const [saveError, setSaveError] = useState<unknown>(null)
+
+  const [correcting, setCorrecting] = useState<Assessment | null>(null)
+  const [correctForm, setCorrectForm] = useState({ result: 'PASS', timeOnTaskMinutes: '', mentorNote: '', changeReason: '' })
+
+  const [signing, setSigning] = useState<Assessment | null>(null)
+  const [decision, setDecision] = useState<'SIGNED_OFF' | 'RETURNED'>('SIGNED_OFF')
+  const [signNote, setSignNote] = useState('')
+
+  const load = useCallback(async () => {
+    setState('loading')
+    setError(null)
     try {
-      await assessmentsApi.signOff(id, { decision: 'SIGNED' })
-      const mark = (a: (typeof INITIAL_ASSESSMENTS)[0]) => (a.id === id ? { ...a, signed: true } : a)
-      setAssessments((prev) => prev.map(mark))
-      setSelected((prev) => (prev && prev.id === id ? { ...prev, signed: true } : prev))
+      const res = await trainingV3.assessments({
+        page, pageSize: PAGE_SIZE,
+        signOffStatus: signOffStatus || undefined,
+        result: result || undefined,
+      })
+      setItems(res.items)
+      setMeta({
+        page: res.page.page ?? page,
+        pageSize: res.page.pageSize ?? PAGE_SIZE,
+        totalItems: res.page.totalItems ?? res.items.length,
+        totalPages: res.page.totalPages ?? 1,
+      })
+      setState('success')
     } catch (err) {
-      if (err instanceof ApiError && err.status === 0) {
-        // Offline demo: keep working locally, clearly labeled.
-        const mark = (a: (typeof INITIAL_ASSESSMENTS)[0]) => (a.id === id ? { ...a, signed: true } : a)
-        setAssessments((prev) => prev.map(mark))
-        setSelected((prev) => (prev && prev.id === id ? { ...prev, signed: true } : prev))
-      } else {
-        setSignError(err instanceof ApiError ? `${err.code}: ${err.message}` : 'Sign-off failed')
-      }
+      setError(err)
+      setState('error')
+    }
+  }, [page, signOffStatus, result])
+
+  useEffect(() => {
+    load()
+  }, [load])
+
+  const create = async () => {
+    if (saving) return
+    if (!form.sessionId.trim() || !form.studentId.trim() || !form.taskId.trim() || !form.timeOnTaskMinutes) {
+      setSaveError(new ApiError({ message: 'Session, student, task and time on task are required.', code: 'BAD_REQUEST', status: 400 }))
+      return
+    }
+    setSaving(true)
+    setSaveError(null)
+    try {
+      await trainingV3.createAssessment({
+        sessionId: form.sessionId.trim(),
+        studentId: form.studentId.trim(),
+        taskId: form.taskId.trim(),
+        result: form.result as 'PASS' | 'FAIL' | 'NEEDS_IMPROVEMENT',
+        timeOnTaskMinutes: Number(form.timeOnTaskMinutes),
+        ...(form.mentorNote ? { mentorNote: form.mentorNote } : {}),
+      })
+      showToast('success', 'Assessment recorded', '')
+      setCreateOpen(false)
+      setForm({ sessionId: '', studentId: '', taskId: '', result: 'PASS', timeOnTaskMinutes: '', mentorNote: '' })
+      load()
+    } catch (err) {
+      setSaveError(err)
     } finally {
-      setSigning(false)
+      setSaving(false)
     }
   }
 
-  const filtered = assessments.filter(
-    (a) =>
-      a.student.toLowerCase().includes(search.toLowerCase()) ||
-      a.course.toLowerCase().includes(search.toLowerCase())
-  )
+  const correct = async () => {
+    if (!correcting || saving) return
+    if (!correctForm.changeReason.trim()) {
+      showToast('error', 'Reason required', 'Corrections need a change reason.')
+      return
+    }
+    setSaving(true)
+    try {
+      await trainingV3.updateAssessment(correcting.id, {
+        version: (correcting as unknown as { version?: number }).version ?? 0,
+        result: correctForm.result as 'PASS' | 'FAIL' | 'NEEDS_IMPROVEMENT',
+        ...(correctForm.timeOnTaskMinutes ? { timeOnTaskMinutes: Number(correctForm.timeOnTaskMinutes) } : {}),
+        ...(correctForm.mentorNote ? { mentorNote: correctForm.mentorNote } : {}),
+        changeReason: correctForm.changeReason.trim(),
+      })
+      showToast('success', 'Assessment corrected', '')
+      setCorrecting(null)
+      load()
+    } catch (err) {
+      showToast('error', 'Failed', backendErrorMessage(err))
+    } finally {
+      setSaving(false)
+    }
+  }
 
-  const attendanceLabel = (status: AttendanceStatus) => {
-    if (status === 'present') return t('assessments.attendance.present')
-    if (status === 'absent') return t('assessments.attendance.absent')
-    return t('assessments.attendance.late')
+  const sign = async () => {
+    if (!signing) return
+    // Client-side SOD hint: a supervisor who assessed cannot sign off.
+    // The backend enforces this regardless.
+    const assessedBy = (signing as unknown as { assessedBy?: string }).assessedBy
+    if (decision === 'SIGNED_OFF' && me?.id && assessedBy === me.id) {
+      showToast('error', 'Not allowed', 'You cannot sign off your own assessment.')
+      return
+    }
+    try {
+      await trainingV3.signOff(signing.id, decision, signNote.trim() || undefined)
+      showToast('success', decision === 'SIGNED_OFF' ? 'Signed off' : 'Returned for correction', '')
+      setSigning(null)
+      setSignNote('')
+      load()
+    } catch (err) {
+      showToast('error', 'Failed', backendErrorMessage(err))
+    }
   }
 
   return (
     <div className="space-y-6">
       <PageHeader
-        title={t('assessments.title')}
-        subtitle={t('assessments.subtitle')}
-        actions={
-          <div className="flex items-center gap-2">
-            <DemoBadge visible={mode === 'demo'} />
-            <div className="bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 text-xs text-amber-700 font-medium">
-              ⚠ {assessments.filter((a) => !a.signed).length} {t('assessments.unsignedBanner')}
-            </div>
-          </div>
-        }
+        title={t('assess.title')}
+        subtitle={`${meta.totalItems}`}
+        actions={canAssess ? <Button onClick={() => { setSaveError(null); setCreateOpen(true) }}>{t('assess.record')}</Button> : undefined}
       />
-
-      <div className="flex items-center gap-3">
-        <SearchBar value={search} onChange={setSearch} placeholder={t('assessments.search')} />
-        <select className="h-9 px-3 border border-slate-200 rounded-lg text-sm text-slate-700 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500">
-          <option>{t('assessments.filter.allCourses')}</option>
-          <option>Engine Overhaul Basics</option>
-          <option>Brake System Inspection</option>
-          <option>Electrical Diagnostics & ECU</option>
-        </select>
-        <select className="h-9 px-3 border border-slate-200 rounded-lg text-sm text-slate-700 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500">
-          <option>{t('assessments.filter.allResults')}</option>
-          <option>{t('badge.pass')}</option>
-          <option>{t('badge.fail')}</option>
-          <option>{t('badge.needs-improvement')}</option>
-        </select>
-      </div>
-
-      <div className="bg-white border border-slate-200 rounded-xl overflow-hidden">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b border-slate-50">
-              <th className="px-6 py-3 text-start text-xs font-semibold text-slate-500 uppercase tracking-wide">{t('assessments.col.student')}</th>
-              <th className="px-6 py-3 text-start text-xs font-semibold text-slate-500 uppercase tracking-wide">{t('assessments.col.courseTask')}</th>
-              <th className="px-6 py-3 text-start text-xs font-semibold text-slate-500 uppercase tracking-wide">{t('assessments.col.date')}</th>
-              <th className="px-6 py-3 text-start text-xs font-semibold text-slate-500 uppercase tracking-wide">{t('assessments.col.attendance')}</th>
-              <th className="px-6 py-3 text-start text-xs font-semibold text-slate-500 uppercase tracking-wide">{t('assessments.col.result')}</th>
-              <th className="px-6 py-3 text-start text-xs font-semibold text-slate-500 uppercase tracking-wide">{t('assessments.col.timeOnTask')}</th>
-              <th className="px-6 py-3 text-start text-xs font-semibold text-slate-500 uppercase tracking-wide">{t('assessments.col.signOff')}</th>
-              <th className="px-6 py-3 text-start text-xs font-semibold text-slate-500 uppercase tracking-wide">{t('assessments.col.actions')}</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filtered.map((a) => (
-              <tr
-                key={a.id}
-                className="border-b border-slate-50 last:border-0 hover:bg-slate-50 cursor-pointer"
-                onClick={() => { setSelected(a); setDetailOpen(true) }}
-              >
-                <td className="px-6 py-4">
-                  <p className="font-medium text-slate-800">{a.student}</p>
-                  <p className="text-xs text-slate-400" dir="ltr">{a.id}</p>
-                </td>
-                <td className="px-6 py-4">
-                  <p className="text-slate-700">{a.course}</p>
-                  <p className="text-xs text-slate-400">{a.task}</p>
-                </td>
-                <td className="px-6 py-4 text-slate-500 text-xs">{a.date}</td>
-                <td className="px-6 py-4">
-                  <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium capitalize ${attendanceBadgeStyle[a.attendance]}`}>
-                    {attendanceLabel(a.attendance)}
-                  </span>
-                </td>
-                <td className="px-6 py-4"><Badge variant={a.result} /></td>
-                <td className="px-6 py-4 text-slate-600 text-xs">{a.timeOnTask}</td>
-                <td className="px-6 py-4">
-                  {a.signed ? (
-                    <span className="text-xs text-green-600 font-medium flex items-center gap-1">
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="20 6 9 17 4 12" /></svg>
-                      {t('assessments.signed')}
-                    </span>
-                  ) : (
-                    <span className="text-xs text-amber-600 font-medium flex items-center gap-1">
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" /></svg>
-                      {t('assessments.pendingSignOff')}
-                    </span>
-                  )}
-                </td>
-                <td className="px-6 py-4">
-                  <div onClick={(e) => e.stopPropagation()}>
-                    {!a.signed && (
-                      <Button size="sm" variant="secondary" loading={signing} onClick={() => handleSignOff(a.id)}>{t('assessments.signOffBtn')}</Button>
-                    )}
+      <div className="bg-white border border-slate-200 rounded-xl">
+        <div className="flex items-center gap-3 px-4 py-3 border-b border-slate-100">
+          <select value={signOffStatus} onChange={(e) => { setSignOffStatus(e.target.value); setPage(1) }} className="h-9 px-3 border rounded-lg text-sm">
+            <option value="">{t('assess.allSignoff')}</option>
+            <option value="PENDING">Pending</option>
+            <option value="SIGNED_OFF">Signed off</option>
+            <option value="RETURNED">Returned</option>
+          </select>
+          <select value={result} onChange={(e) => { setResult(e.target.value); setPage(1) }} className="h-9 px-3 border rounded-lg text-sm">
+            <option value="">{t('assess.allResults')}</option>
+            <option value="PASS">Pass</option>
+            <option value="FAIL">Fail</option>
+            <option value="NEEDS_IMPROVEMENT">Needs improvement</option>
+          </select>
+          <span className="text-xs text-slate-400 ms-auto">{meta.totalItems} total</span>
+        </div>
+        {state === 'loading' && <div className="p-4"><LoadingState /></div>}
+        {state === 'error' && <div className="p-4"><ErrorState error={error} onRetry={load} /></div>}
+        {state === 'success' && items.length === 0 && <div className="p-4"><EmptyState title={t('assess.noItems')} /></div>}
+        {state === 'success' && items.length > 0 && (
+          <>
+            <div className="divide-y divide-slate-50">
+              {items.map((a) => {
+                const r = a as unknown as { result?: string; signOffStatus?: string; timeOnTaskMinutes?: number; mentorNote?: string }
+                return (
+                  <div key={a.id} className="px-4 py-3">
+                    <div className="flex items-center gap-2">
+                      <Badge variant={badgeVariantFor(r.result ?? '')} />
+                      <Badge variant={badgeVariantFor(r.signOffStatus ?? '')} />
+                      <span className="text-xs text-slate-400 ms-auto">{r.timeOnTaskMinutes} min</span>
+                      {canAssess && (
+                        <Button variant="secondary" size="sm" onClick={() => {
+                          setCorrecting(a)
+                          setCorrectForm({ result: r.result ?? 'PASS', timeOnTaskMinutes: String(r.timeOnTaskMinutes ?? ''), mentorNote: r.mentorNote ?? '', changeReason: '' })
+                        }}>{t('assess.correct')}</Button>
+                      )}
+                      {canSignoff && r.signOffStatus === 'PENDING' && (
+                        <Button variant="secondary" size="sm" onClick={() => { setSigning(a); setDecision('SIGNED_OFF'); setSignNote('') }}>{t('assess.signoff')}</Button>
+                      )}
+                    </div>
+                    {r.mentorNote && <p className="text-xs text-slate-500 mt-1">{r.mentorNote}</p>}
                   </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+                )
+              })}
+            </div>
+            <div className="flex items-center justify-between px-4 py-3 border-t border-slate-100">
+              <p className="text-sm text-slate-400">Page {meta.page} of {meta.totalPages}</p>
+              <div className="flex gap-1">
+                <button onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page <= 1} className="h-8 px-2 border rounded-lg disabled:opacity-40">‹</button>
+                <span className="text-sm px-2">{page} / {meta.totalPages}</span>
+                <button onClick={() => setPage((p) => Math.min(meta.totalPages, p + 1))} disabled={page >= meta.totalPages} className="h-8 px-2 border rounded-lg disabled:opacity-40">›</button>
+              </div>
+            </div>
+          </>
+        )}
       </div>
 
-      {/* Detail Modal */}
-      {selected && (
-        <Modal
-          open={detailOpen}
-          onClose={() => { setDetailOpen(false); setSelected(null) }}
-          title={`Assessment ${selected.id}`}
-          size="lg"
-          footer={
-            <>
-              <Button variant="secondary" onClick={() => { setDetailOpen(false); setSelected(null) }}>{t('action.close')}</Button>
-              {!selected.signed && <Button loading={signing} onClick={() => handleSignOff(selected.id)}>{t('action.supervisorSignOff')}</Button>}
-            </>
-          }
-        >
-          <div className="flex flex-col gap-5">
-            {signError && (
-              <div role="alert" className="px-4 py-3 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm">{signError}</div>
-            )}
-            {!selected.signed && (
-              <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 flex items-start gap-3">
-                <svg width="16" height="16" className="text-amber-600 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" /><line x1="12" y1="9" x2="12" y2="13" /><line x1="12" y1="17" x2="12.01" y2="17" /></svg>
-                <div>
-                  <p className="text-sm font-semibold text-amber-800">{t('assessments.modal.pendingTitle')}</p>
-                  <p className="text-xs text-amber-700 mt-0.5">{t('assessments.modal.pendingDesc')}</p>
-                </div>
-              </div>
-            )}
-
-            <div className="grid grid-cols-2 gap-3">
-              {[
-                { label: t('assessments.detail.student'), value: selected.student },
-                { label: t('assessments.detail.course'), value: selected.course },
-                { label: t('assessments.detail.session'), value: <span dir="ltr">{selected.session}</span> },
-                { label: t('assessments.detail.task'), value: selected.task },
-                { label: t('assessments.detail.mentor'), value: selected.mentor },
-                { label: t('assessments.detail.date'), value: selected.date },
-                { label: t('assessments.detail.attendance'), value: <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium capitalize ${attendanceBadgeStyle[selected.attendance]}`}>{attendanceLabel(selected.attendance)}</span> },
-                { label: t('assessments.detail.timeOnTask'), value: selected.timeOnTask },
-              ].map((item) => (
-                <div key={item.label} className="bg-slate-50 rounded-lg p-3">
-                  <p className="text-xs text-slate-400">{item.label}</p>
-                  <div className="mt-0.5 text-sm font-medium text-slate-800">{item.value}</div>
-                </div>
-              ))}
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div className="bg-slate-50 rounded-lg p-3">
-                <p className="text-xs text-slate-400 mb-1">{t('assessments.detail.result')}</p>
-                <Badge variant={selected.result} />
-              </div>
-              <div className="bg-slate-50 rounded-lg p-3">
-                <p className="text-xs text-slate-400 mb-1">{t('assessments.detail.supervisorSignOff')}</p>
-                {selected.signed ? (
-                  <span className="text-sm font-medium text-green-600">✓ {t('assessments.detail.signedStatus')}</span>
-                ) : (
-                  <span className="text-sm font-medium text-amber-600">{t('assessments.detail.pendingStatus')}</span>
-                )}
-              </div>
-            </div>
-
-            <div>
-              <p className="text-xs text-slate-400 mb-1">{t('assessments.detail.mentorNote')}</p>
-              <div className="bg-slate-50 rounded-lg p-3 text-sm text-slate-700">
-                {selected.result === 'pass'
-                  ? 'Student demonstrated good understanding of the procedure. All safety protocols followed correctly.'
-                  : selected.result === 'needs-improvement'
-                  ? 'Student needs more practice with the measurement technique. Recommend additional supervised session before reassessment.'
-                  : 'Student was absent during the practical session. Reschedule required.'}
-              </div>
-            </div>
+      <Modal open={createOpen} onClose={() => !saving && setCreateOpen(false)} title={t('assess.recordTitle')} size="md"
+        footer={<><Button variant="secondary" disabled={saving} onClick={() => setCreateOpen(false)}>Cancel</Button><Button disabled={saving} onClick={create}>{saving ? 'Saving…' : 'Save'}</Button></>}>
+        <div className="flex flex-col gap-3">
+          <Input label={t('assess.sessionId')} value={form.sessionId} onChange={(e) => setForm({ ...form, sessionId: e.target.value })} required />
+          <Input label={t('assess.studentId')} value={form.studentId} onChange={(e) => setForm({ ...form, studentId: e.target.value })} required />
+          <Input label={t('assess.taskId')} value={form.taskId} onChange={(e) => setForm({ ...form, taskId: e.target.value })} required />
+          <div className="grid grid-cols-2 gap-3">
+            <Select label={t('assess.result')} value={form.result} onChange={(e) => setForm({ ...form, result: e.target.value })}
+              options={['PASS', 'FAIL', 'NEEDS_IMPROVEMENT'].map((v) => ({ value: v, label: v }))} />
+            <Input label={t('assess.timeOnTask')} type="number" value={form.timeOnTaskMinutes} onChange={(e) => setForm({ ...form, timeOnTaskMinutes: e.target.value })} required />
           </div>
-        </Modal>
-      )}
+          <Textarea label={t('assess.mentorNote')} value={form.mentorNote} onChange={(e) => setForm({ ...form, mentorNote: e.target.value })} rows={2} />
+          {saveError ? <FieldErrors error={saveError} /> : null}
+        </div>
+      </Modal>
+
+      <Modal open={correcting !== null} onClose={() => setCorrecting(null)} title={t('assess.correctTitle')} size="md"
+        footer={<><Button variant="secondary" onClick={() => setCorrecting(null)}>Cancel</Button><Button disabled={saving} onClick={correct}>{saving ? 'Saving…' : 'Save correction'}</Button></>}>
+        <div className="flex flex-col gap-3">
+          <div className="grid grid-cols-2 gap-3">
+            <Select label={t('assess.result')} value={correctForm.result} onChange={(e) => setCorrectForm({ ...correctForm, result: e.target.value })}
+              options={['PASS', 'FAIL', 'NEEDS_IMPROVEMENT'].map((v) => ({ value: v, label: v }))} />
+            <Input label="Time on task (min)" type="number" value={correctForm.timeOnTaskMinutes} onChange={(e) => setCorrectForm({ ...correctForm, timeOnTaskMinutes: e.target.value })} />
+          </div>
+          <Textarea label="Mentor note" value={correctForm.mentorNote} onChange={(e) => setCorrectForm({ ...correctForm, mentorNote: e.target.value })} rows={2} />
+          <Input label={t('assess.changeReason')} value={correctForm.changeReason} onChange={(e) => setCorrectForm({ ...correctForm, changeReason: e.target.value })} required />
+        </div>
+      </Modal>
+
+      <Modal open={signing !== null} onClose={() => setSigning(null)} title={t('assess.signoffTitle')} size="md"
+        footer={<><Button variant="secondary" onClick={() => setSigning(null)}>Cancel</Button><Button onClick={sign}>Submit</Button></>}>
+        <div className="flex flex-col gap-3">
+          <Select label={t('assess.decision')} value={decision} onChange={(e) => setDecision(e.target.value as 'SIGNED_OFF' | 'RETURNED')}
+            options={[{ value: 'SIGNED_OFF', label: 'Sign off' }, { value: 'RETURNED', label: 'Return for correction' }]} />
+          <Textarea label={t('assess.note')} value={signNote} onChange={(e) => setSignNote(e.target.value)} rows={2} />
+          <p className="text-xs text-slate-400">You cannot sign off an assessment you recorded yourself.</p>
+        </div>
+      </Modal>
     </div>
   )
 }

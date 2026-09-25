@@ -36,8 +36,8 @@ react(),
       port: parseInt(process.env.PORT || '8443'),
       strictPort: true,
       proxy: {
-        // Forward API calls to the local backend (contract servers[0]).
-        // Allows VITE_API_BASE_URL=/api/v1 without backend CORS setup.
+        // Forward API calls to the local backend (NestJS default port).
+        // Keeps VITE_API_BASE_URL=/api/v1 working without CORS setup.
         '/api': {
           target: process.env.WST_API_PROXY_TARGET || 'http://localhost:3000',
           changeOrigin: true,

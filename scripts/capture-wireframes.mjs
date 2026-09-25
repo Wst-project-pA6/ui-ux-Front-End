@@ -2,13 +2,11 @@ import { chromium } from 'playwright-core';
 import path from 'node:path';
 
 const BASE = 'http://localhost:4173';
-const OUT = 'C:/Users/CS/AppData/Local/Temp/opencode/shots';
+const OUT = path.resolve('wireframes');
 const CHROME = 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe';
 
 const shots = [
   { file: 'login.png', role: null, route: '/' },
-  { file: 'signup.png', role: null, route: '/signup' },
-  { file: 'forgot-password.png', role: null, route: '/forgot-password' },
   { file: 'dashboard.png', role: 'manager', route: '/dashboard' },
   { file: 'customers.png', role: 'manager', route: '/customers' },
   { file: 'vehicles.png', role: 'manager', route: '/vehicles' },
