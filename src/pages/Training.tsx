@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
 import { PageHeader } from '../components/ui/PageHeader'
+import { DemoBadge } from '../components/common/DemoBadge'
 import { Badge } from '../components/ui/Badge'
 import { Button } from '../components/ui/Button'
 import { Modal } from '../components/ui/Modal'
@@ -7,7 +8,7 @@ import { Input, Select } from '../components/ui/Input'
 import { ConfirmDialog } from '../components/ui/ConfirmDialog'
 import { useToast } from '../components/ui/Toast'
 import { useLang } from '../i18n/LanguageContext'
-import { useRole } from '../context/RoleContext'
+import { useAuth } from '../context/AuthContext'
 
 type TrainingTab = 'courses' | 'sessions' | 'students' | 'mentors'
 
@@ -54,11 +55,11 @@ const mentors = [
 
 export default function Training() {
   const { t } = useLang()
-  const { role } = useRole()
+  const { roles } = useAuth()
   const { showToast } = useToast()
   // Students browse courses/sessions read-only; scheduling and publishing
-  // stay with the Training Supervisor.
-  const canManage = role !== 'student'
+  // stay with the Training Supervisor. Backend roles decide.
+  const canManage = !roles.includes('STUDENT')
   const [tab, setTab] = useState<TrainingTab>('sessions')
   const [sessions, setSessions] = useState<TrainingSession[]>(sessionsSeed)
   const [addOpen, setAddOpen] = useState(false)
@@ -194,6 +195,7 @@ export default function Training() {
       <PageHeader
         title={t('training.title')}
         subtitle={t('training.subtitle')}
+        badge={<DemoBadge />}
         actions={
           canManage ? (
             <Button onClick={openSchedule}>{t('training.scheduleBtn')}</Button>

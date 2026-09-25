@@ -4,10 +4,12 @@ interface PageHeaderProps {
   title: string
   subtitle?: string
   actions?: React.ReactNode
+  /** e.g. <DemoBadge /> for screens whose backend API is not final yet. */
+  badge?: React.ReactNode
   breadcrumbs?: { label: string; href?: string }[]
 }
 
-export function PageHeader({ title, subtitle, actions, breadcrumbs }: PageHeaderProps) {
+export function PageHeader({ title, subtitle, actions, badge, breadcrumbs }: PageHeaderProps) {
   return (
     <div className="flex items-start justify-between gap-4 mb-4 md:mb-6">
       <div>
@@ -23,7 +25,10 @@ export function PageHeader({ title, subtitle, actions, breadcrumbs }: PageHeader
             ))}
           </div>
         )}
-        <h1 className="text-xl md:text-2xl font-bold text-slate-900">{title}</h1>
+        <h1 className="text-xl md:text-2xl font-bold text-slate-900 flex items-center gap-2 flex-wrap">
+          {title}
+          {badge}
+        </h1>
         {subtitle && <p className="text-sm text-slate-500 mt-0.5">{subtitle}</p>}
       </div>
       {actions && <div className="flex items-center gap-2 shrink-0">{actions}</div>}

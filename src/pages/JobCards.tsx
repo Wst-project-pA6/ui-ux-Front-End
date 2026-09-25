@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { useParams } from 'react-router-dom'
+import { useParams, useNavigate } from 'react-router-dom'
 import { PageHeader, SearchBar } from '../components/ui/PageHeader'
 import { Badge, badgeVariantFor } from '../components/ui/Badge'
 import { Button } from '../components/ui/Button'
@@ -10,6 +10,7 @@ import { useToast } from '../components/ui/Toast'
 import { useLang } from '../i18n/LanguageContext'
 import { useAuth } from '../context/AuthContext'
 import { jobsV3, type JobCard, type Approval, type WorkItem, type LaborEntry } from '../api/v3/jobs'
+import { invoicesV3, type Invoice } from '../api/v4/management'
 import { baysV3, serviceTypesV3, techniciansV3 } from '../api/v3/workshop'
 import { attachmentsV3 } from '../api/v3/platform'
 import { vehiclesV3 } from '../api/v3/vehicles'
@@ -21,7 +22,7 @@ import { newIdempotencyKey, fetchAuthenticatedBlob } from '../api/client'
 const PAGE_SIZE = 20
 const STAGES = ['RECEIVED', 'IN_PROGRESS', 'QUALITY_CHECK', 'READY', 'DELIVERED']
 
-type DetailTab = 'overview' | 'approvals' | 'work' | 'labor' | 'parts' | 'quality' | 'photos' | 'history'
+type DetailTab = 'overview' | 'approvals' | 'work' | 'labor' | 'parts' | 'quality' | 'photos' | 'invoice' | 'history'
 
 export default function JobCards() {
   const { t } = useLang()
@@ -44,6 +45,8 @@ export default function JobCards() {
   const canUpload = hasPermission(PERMS.attachmentsUpload) || hasPermission(PERMS.attachmentsUploadJob)
   const canIssue = hasPermission(PERMS.inventoryIssue)
   const canReverse = hasPermission(PERMS.inventoryReverse)
+  const canInvoicesRead = hasPermission(PERMS.invoicesRead)
+  const navigate = useNavigate()
 
   const [items, setItems] = useState<JobCard[]>([])
   const [meta, setMeta] = useState({ page: 1, pageSize: PAGE_SIZE, totalItems: 0, totalPages: 1 })
@@ -79,6 +82,7 @@ export default function JobCards() {
   const [history, setHistory] = useState<never[]>([])
   const [photos, setPhotos] = useState<{ id: string }[]>([])
   const [photoUrls, setPhotoUrls] = useState<Record<string, string>>({})
+  const [jobInvoices, setJobInvoices] = useState<Invoice[]>([])
 
   const [assignForm, setAssignForm] = useState({ bayId: '', technicianId: '', scheduledStartAt: '', expectedCompletionAt: '', overrideReason: '' })
   const [bays, setBays] = useState<{ id: string; name: string; code?: string }[]>([])
@@ -136,13 +140,19 @@ export default function JobCards() {
       setIssues(((is as { items: never[] }).items ?? []) as never[])
       setQuality(((qc as { items: never[] }).items ?? []) as never[])
       setPhotos((((ph as { items: { id: string }[] }).items ?? []) as { id: string }[]))
+      if (canInvoicesRead) {
+        const inv = await invoicesV3.list({ jobId: id, page: 1, pageSize: 10 }).catch(() => ({ items: [] }))
+        setJobInvoices(((inv as { items: Invoice[] }).items ?? []) as Invoice[])
+      } else {
+        setJobInvoices([])
+      }
     } catch (err) {
       showToast('error', 'Failed to load job', backendErrorMessage(err))
     } finally {
       setDetailLoading(false)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [canApproveRead, canLaborRead])
+  }, [canApproveRead, canLaborRead, canInvoicesRead])
 
   useEffect(() => {
     if (detailId) {
@@ -177,6 +187,10 @@ export default function JobCards() {
       setCreateError(new ApiError({ message: 'Vehicle, complaint and service type are required.', code: 'BAD_REQUEST', status: 400 }))
       return
     }
+    if (!createForm.expectedCompletionAt) {
+      setCreateError(new ApiError({ message: 'Expected completion is required (contract v4).', code: 'BAD_REQUEST', status: 400 }))
+      return
+    }
     setSaving(true)
     setCreateError(null)
     try {
@@ -186,7 +200,7 @@ export default function JobCards() {
         serviceTypeId: createForm.serviceTypeId,
         priority: createForm.priority,
         mileageAtIntake: Number(createForm.mileageAtIntake),
-        ...(createForm.expectedCompletionAt ? { expectedCompletionAt: new Date(createForm.expectedCompletionAt).toISOString() } : {}),
+        expectedCompletionAt: new Date(createForm.expectedCompletionAt).toISOString(),
         ...(createForm.workItems.trim() ? { workItems: createForm.workItems.split('\n').map((s) => s.trim()).filter(Boolean).slice(0, 50).map((description) => ({ description })) } : {}),
         ...(intakePhotos.length ? { attachmentIds: intakePhotos } : {}),
       }
@@ -374,7 +388,7 @@ export default function JobCards() {
           {detailLoading || !detail ? <LoadingState /> : (
             <div className="flex flex-col gap-4">
               <div className="flex gap-2 flex-wrap border-b border-slate-100 pb-2">
-                {(['overview', 'approvals', 'work', 'labor', 'parts', 'quality', 'photos', 'history'] as DetailTab[]).map((tb) => (
+                {(['overview', 'approvals', 'work', 'labor', 'parts', 'quality', 'photos', 'invoice', 'history'] as DetailTab[]).map((tb) => (
                   <button key={tb} onClick={() => setDetailTab(tb)} className={`px-3 py-1.5 text-xs font-medium rounded-lg ${detailTab === tb ? 'bg-slate-900 text-white' : 'text-slate-600 hover:bg-slate-100'}`}>{tb}</button>
                 ))}
               </div>
@@ -409,6 +423,9 @@ export default function JobCards() {
                 <PhotosTab job={detail} photos={photos} urls={photoUrls} setUrls={setPhotoUrls} canUpload={canUpload}
                   onReload={() => detail && loadDetail(detail.id)} showToast={showToast} />
               )}
+              {detailTab === 'invoice' && (
+                <JobInvoiceTab job={detail} invoices={jobInvoices} canRead={canInvoicesRead} navigate={navigate} />
+              )}
               {detailTab === 'history' && (
                 <div className="flex flex-col gap-2">
                   {history.length === 0 ? <p className="text-xs text-slate-400">No stage history.</p> : (history as unknown as { id: string; fromStage?: string; toStage: string; transitionedAt: string; reason?: string }[]).map((h) => (
@@ -425,7 +442,7 @@ export default function JobCards() {
       )}
 
       <ConfirmDialog open={!!pendingTransition} title={pendingTransition === 'DELIVERED' ? 'Deliver to customer' : `Move to ${pendingTransition}`}
-        message={pendingTransition === 'DELIVERED' ? 'Delivery needs a finalized invoice (Part 3). Until then the server answers 409 INVOICE_REQUIRED unless already finalized in demo data.' : `Move job forward? Reason is optional and stored on stage history.`}
+        message={pendingTransition === 'DELIVERED' ? 'Delivery requires a finalized invoice (ISSUED or PAID). The server answers 409 INVOICE_REQUIRED otherwise — check the invoice tab first.' : `Move job forward? Reason is optional and stored on stage history.`}
         confirmLabel="Confirm" onConfirm={() => pendingTransition && doTransition(pendingTransition)} onCancel={() => setPendingTransition(null)} />
 
       <Modal open={createOpen} onClose={() => !saving && setCreateOpen(false)} title="New job card" size="lg"
@@ -441,7 +458,7 @@ export default function JobCards() {
             <Select label="Priority" value={createForm.priority} onChange={(e) => setCreateForm({ ...createForm, priority: e.target.value })}
               options={[{ value: 'LOW', label: 'Low' }, { value: 'NORMAL', label: 'Normal' }, { value: 'HIGH', label: 'High' }]} />
             <Input label="Mileage at intake (≥ vehicle mileage)" type="number" value={createForm.mileageAtIntake} onChange={(e) => setCreateForm({ ...createForm, mileageAtIntake: e.target.value })} required />
-            <Input label="Expected completion" type="datetime-local" value={createForm.expectedCompletionAt} onChange={(e) => setCreateForm({ ...createForm, expectedCompletionAt: e.target.value })} />
+            <Input label="Expected completion (required)" type="datetime-local" value={createForm.expectedCompletionAt} onChange={(e) => setCreateForm({ ...createForm, expectedCompletionAt: e.target.value })} required />
           </div>
           <Textarea label="Initial work checklist (one per line, ≤50)" value={createForm.workItems} onChange={(e) => setCreateForm({ ...createForm, workItems: e.target.value })} rows={3} />
           <div>
@@ -593,24 +610,37 @@ function ApprovalsTab({ job, approvals, canRecord, canRequest, canUpdate, onRelo
     }
   }
 
-  const withdraw = async (id: string) => {
-    const reason = window.prompt('Withdrawal reason (required):')
-    if (!reason) return
+  const [withdrawId, setWithdrawId] = useState<string | null>(null)
+  const [withdrawReason, setWithdrawReason] = useState('')
+  const [workItemApprovalId, setWorkItemApprovalId] = useState<string | null>(null)
+  const [workItemDescription, setWorkItemDescription] = useState('')
+
+  const withdraw = async () => {
+    if (!withdrawId || withdrawReason.trim().length < 3) {
+      showToast('error', 'Reason required', 'Withdrawal needs a reason (3+ characters).')
+      return
+    }
     try {
-      await jobsV3.withdrawApproval(job.id, id, { reason })
+      await jobsV3.withdrawApproval(job.id, withdrawId, { reason: withdrawReason.trim() })
       showToast('success', 'Withdrawn', '')
+      setWithdrawId(null)
+      setWithdrawReason('')
       onReload()
     } catch (err) {
       showToast('error', 'Failed', backendErrorMessage(err))
     }
   }
 
-  const addAsWorkItem = async (approvalId: string) => {
-    const description = window.prompt('Work item description (1–300 chars):')
-    if (!description) return
+  const addAsWorkItem = async () => {
+    if (!workItemApprovalId || workItemDescription.trim().length < 1 || workItemDescription.trim().length > 300) {
+      showToast('error', 'Description required', 'Work item description must be 1–300 characters.')
+      return
+    }
     try {
-      await jobsV3.createWorkItem(job.id, { description, approvalId } as never)
+      await jobsV3.createWorkItem(job.id, { description: workItemDescription.trim(), approvalId: workItemApprovalId } as never)
       showToast('success', 'Work item added', '')
+      setWorkItemApprovalId(null)
+      setWorkItemDescription('')
       onReload()
     } catch (err) {
       showToast('error', 'Failed', backendErrorMessage(err))
@@ -629,8 +659,8 @@ function ApprovalsTab({ job, approvals, canRecord, canRequest, canUpdate, onRelo
             {r.estimatedAmount && <p className="text-xs text-slate-500">Amount: {JSON.stringify(r.estimatedAmount)}</p>}
             <div className="flex gap-2 mt-2">
               {canRecord && r.status === 'PENDING' && <Button variant="secondary" size="sm" onClick={() => setDecideId(a.id)}>Record decision</Button>}
-              {canRecord && r.status === 'APPROVED' && r.scope === 'INITIAL_WORK' && <Button variant="secondary" size="sm" onClick={() => withdraw(a.id)}>Withdraw</Button>}
-              {canUpdate && r.status === 'APPROVED' && r.scope === 'ADDITIONAL_WORK' && <Button variant="secondary" size="sm" onClick={() => addAsWorkItem(a.id)}>Add as work item</Button>}
+              {canRecord && r.status === 'APPROVED' && r.scope === 'INITIAL_WORK' && <Button variant="secondary" size="sm" onClick={() => { setWithdrawId(a.id); setWithdrawReason('') }}>Withdraw</Button>}
+              {canUpdate && r.status === 'APPROVED' && r.scope === 'ADDITIONAL_WORK' && <Button variant="secondary" size="sm" onClick={() => { setWorkItemApprovalId(a.id); setWorkItemDescription('') }}>Add as work item</Button>}
             </div>
           </div>
         )
@@ -652,6 +682,15 @@ function ApprovalsTab({ job, approvals, canRecord, canRequest, canUpdate, onRelo
           <Input label="Amount EGP (required for approve)" type="number" value={decideForm.amount} onChange={(e) => setDecideForm({ ...decideForm, amount: e.target.value })} />
           <Input label="Notes (required for reject)" value={decideForm.notes} onChange={(e) => setDecideForm({ ...decideForm, notes: e.target.value })} />
         </div>
+      </Modal>
+      <Modal open={withdrawId !== null} onClose={() => setWithdrawId(null)} title="Withdraw approved initial scope" size="sm"
+        footer={<><Button variant="secondary" onClick={() => setWithdrawId(null)}>Cancel</Button><Button onClick={withdraw}>Withdraw</Button></>}>
+        <Textarea label="Reason (required)" value={withdrawReason} onChange={(e) => setWithdrawReason(e.target.value)} rows={3} required />
+        <p className="text-xs text-slate-400 mt-1">If no other initial approval stays approved, the job closes automatically (RECEIVED → DELIVERED, no invoice).</p>
+      </Modal>
+      <Modal open={workItemApprovalId !== null} onClose={() => setWorkItemApprovalId(null)} title="Add as work item" size="md"
+        footer={<><Button variant="secondary" onClick={() => setWorkItemApprovalId(null)}>Cancel</Button><Button onClick={addAsWorkItem}>Add</Button></>}>
+        <Input label="Description (1–300 chars)" value={workItemDescription} onChange={(e) => setWorkItemDescription(e.target.value)} required />
       </Modal>
     </div>
   )
@@ -741,25 +780,42 @@ function LaborTab({ job, entries, workItems, canWrite, onReload, showToast }: {
     }
   }
 
-  const correct = async (id: string) => {
-    const duration = window.prompt('New durationMinutes (1–1440):')
-    const reason = window.prompt('changeReason (required, 3–500):')
-    if (!duration || !reason) return
+  const [correctId, setCorrectId] = useState<string | null>(null)
+  const [correctForm, setCorrectForm] = useState({ durationMinutes: '', changeReason: '' })
+  const [voidId, setVoidId] = useState<string | null>(null)
+  const [voidReason, setVoidReason] = useState('')
+
+  const correct = async () => {
+    if (!correctId) return
+    const minutes = Number(correctForm.durationMinutes)
+    if (!Number.isInteger(minutes) || minutes < 1 || minutes > 1440) {
+      showToast('error', 'Invalid duration', 'Duration must be a whole number 1–1440.')
+      return
+    }
+    if (correctForm.changeReason.trim().length < 3 || correctForm.changeReason.trim().length > 500) {
+      showToast('error', 'Reason required', 'changeReason must be 3–500 characters.')
+      return
+    }
     try {
-      await jobsV3.correctLabor(job.id, id, { durationMinutes: Number(duration), changeReason: reason })
+      await jobsV3.correctLabor(job.id, correctId, { durationMinutes: minutes, changeReason: correctForm.changeReason.trim() })
       showToast('success', 'Corrected', '')
+      setCorrectId(null)
       onReload()
     } catch (err) {
       showToast('error', 'Failed', backendErrorMessage(err))
     }
   }
 
-  const voidEntry = async (id: string) => {
-    const reason = window.prompt('Void reason (required):')
-    if (!reason) return
+  const voidEntry = async () => {
+    if (!voidId || voidReason.trim().length < 1) {
+      showToast('error', 'Reason required', 'Voiding needs a reason.')
+      return
+    }
     try {
-      await jobsV3.voidLabor(job.id, id, { reason })
+      await jobsV3.voidLabor(job.id, voidId, { reason: voidReason.trim() })
       showToast('success', 'Voided', '')
+      setVoidId(null)
+      setVoidReason('')
       onReload()
     } catch (err) {
       showToast('error', 'Failed', backendErrorMessage(err))
@@ -777,8 +833,8 @@ function LaborTab({ job, entries, workItems, canWrite, onReload, showToast }: {
             <p className="text-xs text-slate-500">Amount: {formatMoney((e as unknown as { amount?: never }).amount as never)}{(e as unknown as { hourlyRate?: never }).hourlyRate ? ` · rate ${formatMoney((e as unknown as { hourlyRate?: never }).hourlyRate as never)}` : ' (rate hidden for your role)'}</p>
             {canWrite && r.status === 'ACTIVE' && (
               <div className="flex gap-2 mt-2">
-                <Button variant="secondary" size="sm" onClick={() => correct(e.id)}>Correct</Button>
-                <Button variant="secondary" size="sm" onClick={() => voidEntry(e.id)}>Void</Button>
+                <Button variant="secondary" size="sm" onClick={() => { setCorrectId(e.id); setCorrectForm({ durationMinutes: '', changeReason: '' }) }}>Correct</Button>
+                <Button variant="secondary" size="sm" onClick={() => { setVoidId(e.id); setVoidReason('') }}>Void</Button>
               </div>
             )}
           </div>
@@ -795,6 +851,18 @@ function LaborTab({ job, entries, workItems, canWrite, onReload, showToast }: {
           </div>
           <Input label="Description (≤500)" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
         </div>
+      </Modal>
+      <Modal open={correctId !== null} onClose={() => setCorrectId(null)} title="Correct labor entry" size="md"
+        footer={<><Button variant="secondary" onClick={() => setCorrectId(null)}>Cancel</Button><Button onClick={correct}>Save correction</Button></>}>
+        <div className="flex flex-col gap-3">
+          <Input label="Duration (minutes, 1–1440)" type="number" value={correctForm.durationMinutes} onChange={(e) => setCorrectForm({ ...correctForm, durationMinutes: e.target.value })} required />
+          <Input label="Change reason (required, 3–500)" value={correctForm.changeReason} onChange={(e) => setCorrectForm({ ...correctForm, changeReason: e.target.value })} required />
+        </div>
+      </Modal>
+      <Modal open={voidId !== null} onClose={() => setVoidId(null)} title="Void labor entry" size="sm"
+        footer={<><Button variant="secondary" onClick={() => setVoidId(null)}>Cancel</Button><Button onClick={voidEntry}>Void entry</Button></>}>
+        <Input label="Reason (required)" value={voidReason} onChange={(e) => setVoidReason(e.target.value)} required />
+        <p className="text-xs text-slate-400 mt-1">A voided entry stays in the list with status VOIDED.</p>
       </Modal>
     </div>
   )
@@ -847,13 +915,25 @@ function PartsTab({ job, reservations, issues, canIssue, canReverse, onReload, s
     }
   }
 
-  const reverse = async (issueId: string) => {
-    const quantity = window.prompt('Quantity to reverse:')
-    const reason = window.prompt('Reason (3–500, required):')
-    if (!quantity || !reason) return
+  const [reverseId, setReverseId] = useState<string | null>(null)
+  const [reverseForm, setReverseForm] = useState({ quantity: '', reason: '' })
+
+  const reverse = async () => {
+    if (!reverseId) return
+    const qty = Number(reverseForm.quantity)
+    if (!Number.isInteger(qty) || qty <= 0) {
+      showToast('error', 'Invalid quantity', 'Quantity must be a whole number above 0.')
+      return
+    }
+    if (reverseForm.reason.trim().length < 3 || reverseForm.reason.trim().length > 500) {
+      showToast('error', 'Reason required', 'Reversal needs a reason (3–500 characters).')
+      return
+    }
     try {
-      await jobsV3.reverseIssue(job.id, issueId, { quantity: Number(quantity), reason }, newIdempotencyKey())
-      showToast('success', 'Reversed', '')
+      await jobsV3.reverseIssue(job.id, reverseId, { quantity: qty, reason: reverseForm.reason.trim() }, newIdempotencyKey())
+      showToast('success', 'Reversed', 'Stock went back up.')
+      setReverseId(null)
+      setReverseForm({ quantity: '', reason: '' })
       onReload()
     } catch (err) {
       showToast('error', 'Failed', backendErrorMessage(err))
@@ -883,7 +963,7 @@ function PartsTab({ job, reservations, issues, canIssue, canReverse, onReload, s
           <div key={x.id} className="border border-slate-100 rounded-lg p-2 text-sm">
             <p className="font-mono text-xs">{x.id.slice(0, 8)}… · {x.status} · qty {x.quantity}</p>
             <p className="text-xs text-slate-500">Price: {x.unitPrice ? formatMoney(x.unitPrice) : '(hidden for your role)'}</p>
-            {canReverse && <Button variant="secondary" size="sm" onClick={() => reverse(x.id)} className="mt-1">Reverse</Button>}
+            {canReverse && <Button variant="secondary" size="sm" onClick={() => { setReverseId(x.id); setReverseForm({ quantity: '', reason: '' }) }} className="mt-1">Reverse</Button>}
           </div>
         ))}
       </div>
@@ -903,6 +983,14 @@ function PartsTab({ job, reservations, issues, canIssue, canReverse, onReload, s
           <Input label="Qty" type="number" value={issueForm.quantity} onChange={(e) => setIssueForm({ ...issueForm, quantity: e.target.value })} required />
           <Input label="Work item ID (opt)" value={issueForm.workItemId} onChange={(e) => setIssueForm({ ...issueForm, workItemId: e.target.value })} />
           <Input label="Reservation ID (opt)" value={issueForm.reservationId} onChange={(e) => setIssueForm({ ...issueForm, reservationId: e.target.value })} />
+        </div>
+      </Modal>
+      <Modal open={reverseId !== null} onClose={() => setReverseId(null)} title="Reverse part issue (idempotent)" size="md"
+        footer={<><Button variant="secondary" onClick={() => setReverseId(null)}>Cancel</Button><Button onClick={reverse}>Reverse</Button></>}>
+        <div className="flex flex-col gap-3">
+          <Input label="Quantity (≤ still issued)" type="number" value={reverseForm.quantity} onChange={(e) => setReverseForm({ ...reverseForm, quantity: e.target.value })} required />
+          <Input label="Reason (required, 3–500)" value={reverseForm.reason} onChange={(e) => setReverseForm({ ...reverseForm, reason: e.target.value })} required />
+          <p className="text-xs text-slate-400">Stock goes back up. Only while the job is IN_PROGRESS.</p>
         </div>
       </Modal>
     </div>
@@ -1001,6 +1089,82 @@ function PhotosTab({ job, photos, urls, setUrls, canUpload, onReload, showToast 
         </div>
       )}
       <p className="text-xs text-slate-400">Files need Bearer header — never use {'<img src={signedUrl}>'} directly; use the blob approach.</p>
+    </div>
+  )
+}
+
+function JobInvoiceTab({ job, invoices, canRead, navigate }: {
+  job: JobCard
+  invoices: Invoice[]
+  canRead: boolean
+  navigate: (to: string) => void
+}) {
+  const [summary, setSummary] = useState<unknown>(null)
+  const [summaryState, setSummaryState] = useState<'idle' | 'loading' | 'error'>('idle')
+
+  useEffect(() => {
+    if (!canRead) return
+    let cancelled = false
+    setSummaryState('loading')
+    invoicesV3.summary(job.id).then(
+      (s) => {
+        if (!cancelled) {
+          setSummary(s)
+          setSummaryState('idle')
+        }
+      },
+      () => {
+        if (!cancelled) setSummaryState('error')
+      },
+    )
+    return () => {
+      cancelled = true
+    }
+  }, [job.id, canRead])
+
+  if (!canRead) return <p className="text-xs text-slate-400">You do not have invoices.read permission.</p>
+
+  return (
+    <div className="flex flex-col gap-3">
+      <div>
+        <p className="text-sm font-semibold mb-2">Invoices on this job ({invoices.length})</p>
+        {invoices.length === 0 ? (
+          <p className="text-xs text-slate-400">None yet — a draft is created when the job passes quality check.</p>
+        ) : (
+          invoices.map((inv) => {
+            const r = inv as unknown as { invoiceNumber?: string; status?: string; totals?: { total?: unknown } }
+            return (
+              <div key={inv.id} className="border border-slate-100 rounded-lg p-3 flex items-center gap-3 mb-2">
+                <div className="flex-1">
+                  <p className="text-sm font-mono" dir="ltr">{r.invoiceNumber ?? `${inv.id.slice(0, 8)}… (draft)`}</p>
+                  <p className="text-xs text-slate-500">
+                    <Badge variant={badgeVariantFor(r.status ?? '')} /> total {formatMoney((r.totals?.total as never) ?? undefined as never)}
+                  </p>
+                </div>
+                <Button variant="secondary" size="sm" onClick={() => navigate(`/invoices/${inv.id}`)}>Open invoice</Button>
+              </div>
+            )
+          })
+        )}
+      </div>
+      <div>
+        <p className="text-sm font-semibold mb-2">Live invoice preview (server-computed)</p>
+        {summaryState === 'loading' && <LoadingState label="Loading summary…" />}
+        {summaryState === 'error' && <p className="text-xs text-slate-400">Summary unavailable (e.g. job has no billable scope yet).</p>}
+        {summaryState === 'idle' && summary !== null && (
+          <div className="grid grid-cols-2 gap-2">
+            {Object.entries(summary as Record<string, unknown>).map(([k, v]) => (
+              <div key={k} className="bg-slate-50 rounded-lg p-2">
+                <p className="text-xs text-slate-400 font-mono">{k}</p>
+                <p className="text-xs font-mono break-all">{typeof v === 'object' ? JSON.stringify(v) : String(v ?? '—')}</p>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+      <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+        Deliver is available when the invoice is ISSUED or PAID — the backend answers 409 INVOICE_REQUIRED otherwise.
+      </p>
     </div>
   )
 }

@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
 import { PageHeader } from '../components/ui/PageHeader'
+import { DemoBadge } from '../components/common/DemoBadge'
 import { Button } from '../components/ui/Button'
 import { useToast } from '../components/ui/Toast'
 import { useLang } from '../i18n/LanguageContext'
@@ -112,6 +113,7 @@ export default function AIInsights() {
       <PageHeader
         title={t('ai.title')}
         subtitle={t('ai.subtitle')}
+        badge={<DemoBadge />}
       />
 
       {/* Disclaimer Banner */}

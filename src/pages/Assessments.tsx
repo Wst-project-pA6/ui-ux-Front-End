@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
 import { PageHeader, SearchBar } from '../components/ui/PageHeader'
+import { DemoBadge } from '../components/common/DemoBadge'
 import { Badge } from '../components/ui/Badge'
 import { Button } from '../components/ui/Button'
 import { Modal } from '../components/ui/Modal'
@@ -85,6 +86,7 @@ export default function Assessments() {
       <PageHeader
         title={t('assessments.title')}
         subtitle={t('assessments.subtitle')}
+        badge={<DemoBadge />}
         actions={
           <div className="bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 text-xs text-amber-700 font-medium">
             ⚠ {assessments.filter((a) => !a.signed).length} {t('assessments.unsignedBanner')}

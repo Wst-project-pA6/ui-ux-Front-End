@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
 import { PageHeader, SearchBar } from '../components/ui/PageHeader'
+import { DemoBadge } from '../components/common/DemoBadge'
 import { Badge } from '../components/ui/Badge'
 import { Button } from '../components/ui/Button'
 import { Modal } from '../components/ui/Modal'
@@ -147,6 +148,7 @@ export default function Competencies() {
       <PageHeader
         title={t('competencies.title')}
         subtitle={t('competencies.subtitle')}
+        badge={<DemoBadge />}
       />
 
       {/* Summary KPIs */}

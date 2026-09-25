@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
 import { PageHeader } from '../components/ui/PageHeader'
+import { DemoBadge } from '../components/common/DemoBadge'
 import {
   BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend
 } from 'recharts'
@@ -85,6 +86,7 @@ export default function Reports() {
       <PageHeader
         title={t('reports.title')}
         subtitle={t('reports.subtitle')}
+        badge={<DemoBadge />}
         actions={
           <button
             onClick={handleExportPdf}

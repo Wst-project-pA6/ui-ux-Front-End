@@ -375,6 +375,208 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/invoices": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description **Allowed roles:** FINANCE_VIEWER_AUDITOR, SERVICE_ADVISOR, WORKSHOP_MANAGER
+         *
+         *     **Permissions (any of):** `invoices.read`
+         */
+        get: operations["InvoicesController_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/invoices/{invoiceId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description **Allowed roles:** FINANCE_VIEWER_AUDITOR, SERVICE_ADVISOR, WORKSHOP_MANAGER
+         *
+         *     **Permissions (any of):** `invoices.read`
+         */
+        get: operations["InvoicesController_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * @description **Allowed roles:** SERVICE_ADVISOR
+         *
+         *     **Permissions (any of):** `invoices.manage`
+         */
+        patch: operations["InvoicesController_update"];
+        trace?: never;
+    };
+    "/api/v1/invoices/{invoiceId}/sublet-costs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * @description **Allowed roles:** SERVICE_ADVISOR
+         *
+         *     **Permissions (any of):** `invoices.manage`
+         */
+        post: operations["InvoicesController_addSubletCost"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/invoices/{invoiceId}/sublet-costs/{subletId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * @description **Allowed roles:** SERVICE_ADVISOR
+         *
+         *     **Permissions (any of):** `invoices.manage`
+         */
+        delete: operations["InvoicesController_voidSubletCost"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/invoices/{invoiceId}/transitions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * @description **Allowed roles:** SERVICE_ADVISOR
+         *
+         *     **Permissions (any of):** `invoices.manage`
+         */
+        post: operations["InvoicesController_transition"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/invoices/{invoiceId}/payments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * @description **Allowed roles:** SERVICE_ADVISOR
+         *
+         *     **Permissions (any of):** `payments.record`
+         */
+        post: operations["InvoicesController_recordPayment"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/job-cards/{jobId}/invoice-summary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description **Allowed roles:** FINANCE_VIEWER_AUDITOR, SERVICE_ADVISOR, WORKSHOP_MANAGER
+         *
+         *     **Permissions (any of):** `invoices.read`
+         */
+        get: operations["JobInvoicesController_getSummary"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/job-cards/{jobId}/invoices": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * @description **Allowed roles:** SERVICE_ADVISOR
+         *
+         *     **Permissions (any of):** `invoices.manage`
+         */
+        post: operations["JobInvoicesController_regenerateInvoice"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/config/finance-settings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description **Allowed roles:** SYSTEM_ADMIN
+         *
+         *     **Permissions (any of):** `config.read`
+         */
+        get: operations["FinanceSettingsController_get"];
+        /**
+         * Update the invoice tax rate (UC-29A step 1/D5)
+         * @description currencyCode is read-only and never changes here. A DRAFT invoice keeps the tax rate it was generated with — a discount change or a sublet cost added/voided recomputes its totals with that same rate. Only regenerating the draft (POST /job-cards/{jobId}/invoices) applies the rate in force now. A finalized (ISSUED/PAID/VOID) invoice never changes.
+         *
+         *     **Allowed roles:** SYSTEM_ADMIN
+         *
+         *     **Permissions (any of):** `config.manage`
+         */
+        put: operations["FinanceSettingsController_replace"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/vehicles": {
         parameters: {
             query?: never;
@@ -1470,6 +1672,256 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/config/purchase-approval-policy": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description **Allowed roles:** FINANCE_VIEWER_AUDITOR, STOREKEEPER_PROCUREMENT, SYSTEM_ADMIN, WORKSHOP_MANAGER
+         *
+         *     **Permissions (any of):** `config.read`, `purchasing.read`
+         */
+        get: operations["PurchaseApprovalPolicyController_getPolicy"];
+        /**
+         * @description **Allowed roles:** WORKSHOP_MANAGER
+         *
+         *     **Permissions (any of):** `purchasing.policy.manage`
+         */
+        put: operations["PurchaseApprovalPolicyController_replacePolicy"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/vendors": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description **Allowed roles:** STOREKEEPER_PROCUREMENT, WORKSHOP_MANAGER
+         *
+         *     **Permissions (any of):** `vendors.read`
+         */
+        get: operations["VendorsController_list"];
+        put?: never;
+        /**
+         * @description **Allowed roles:** STOREKEEPER_PROCUREMENT
+         *
+         *     **Permissions (any of):** `vendors.write`
+         */
+        post: operations["VendorsController_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/vendors/{vendorId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * @description **Allowed roles:** STOREKEEPER_PROCUREMENT
+         *
+         *     **Permissions (any of):** `vendors.write`
+         */
+        patch: operations["VendorsController_update"];
+        trace?: never;
+    };
+    "/api/v1/purchase-orders": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description **Allowed roles:** FINANCE_VIEWER_AUDITOR, STOREKEEPER_PROCUREMENT, WORKSHOP_MANAGER
+         *
+         *     **Permissions (any of):** `purchasing.read`
+         */
+        get: operations["PurchaseOrdersController_list"];
+        put?: never;
+        /**
+         * @description **Allowed roles:** STOREKEEPER_PROCUREMENT
+         *
+         *     **Permissions (any of):** `purchasing.create`
+         */
+        post: operations["PurchaseOrdersController_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/purchase-orders/{purchaseOrderId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description **Allowed roles:** FINANCE_VIEWER_AUDITOR, STOREKEEPER_PROCUREMENT, WORKSHOP_MANAGER
+         *
+         *     **Permissions (any of):** `purchasing.read`
+         */
+        get: operations["PurchaseOrdersController_getById"];
+        put?: never;
+        post?: never;
+        /**
+         * @description **Allowed roles:** STOREKEEPER_PROCUREMENT
+         *
+         *     **Permissions (any of):** `purchasing.create`
+         */
+        delete: operations["PurchaseOrdersController_discard"];
+        options?: never;
+        head?: never;
+        /**
+         * @description **Allowed roles:** STOREKEEPER_PROCUREMENT
+         *
+         *     **Permissions (any of):** `purchasing.create`
+         */
+        patch: operations["PurchaseOrdersController_update"];
+        trace?: never;
+    };
+    "/api/v1/purchase-orders/{purchaseOrderId}/transitions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * @description **Allowed roles:** STOREKEEPER_PROCUREMENT
+         *
+         *     **Permissions (any of):** `purchasing.create`
+         */
+        post: operations["PurchaseOrdersController_transition"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/purchase-orders/{purchaseOrderId}/lines/{lineId}/remainder-closure": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * @description **Allowed roles:** STOREKEEPER_PROCUREMENT
+         *
+         *     **Permissions (any of):** `purchasing.receive`
+         */
+        post: operations["PurchaseOrdersController_closeLineRemainder"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/purchase-orders/{purchaseOrderId}/approvals": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description **Allowed roles:** FINANCE_VIEWER_AUDITOR, STOREKEEPER_PROCUREMENT, WORKSHOP_MANAGER
+         *
+         *     **Permissions (any of):** `purchasing.read`
+         */
+        get: operations["PurchaseOrdersController_listApprovals"];
+        put?: never;
+        /**
+         * @description **Allowed roles:** WORKSHOP_MANAGER
+         *
+         *     **Permissions (any of):** `purchasing.approve`
+         */
+        post: operations["PurchaseOrdersController_decide"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/purchase-orders/{purchaseOrderId}/goods-receipts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description **Allowed roles:** FINANCE_VIEWER_AUDITOR, STOREKEEPER_PROCUREMENT, WORKSHOP_MANAGER
+         *
+         *     **Permissions (any of):** `purchasing.read`
+         */
+        get: operations["PurchaseOrdersController_listGoodsReceipts"];
+        put?: never;
+        /**
+         * @description **Allowed roles:** STOREKEEPER_PROCUREMENT
+         *
+         *     **Permissions (any of):** `purchasing.receive`
+         */
+        post: operations["PurchaseOrdersController_createGoodsReceipt"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/config/data-quality-settings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description **Allowed roles:** SYSTEM_ADMIN
+         *
+         *     **Permissions (any of):** `config.read`
+         */
+        get: operations["DataQualitySettingsController_get"];
+        /**
+         * @description **Allowed roles:** SYSTEM_ADMIN
+         *
+         *     **Permissions (any of):** `config.manage`
+         */
+        put: operations["DataQualitySettingsController_replace"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/technician-profiles": {
         parameters: {
             query?: never;
@@ -1752,6 +2204,154 @@ export interface components {
         CustomerContactErasureDto: {
             reason: string;
         };
+        InvoiceLineResponseDto: {
+            id: string;
+            /** @enum {string} */
+            lineType: "LABOR" | "PART" | "SUBLET";
+            description: string;
+            /**
+             * @description Decimal string (hours for labor, units for parts).
+             * @example 1.0000
+             */
+            quantity: string;
+            unitPrice: components["schemas"]["MoneyDto"];
+            lineTotal: components["schemas"]["MoneyDto"];
+            /**
+             * @description Every line comes from a recorded source — never typed by hand (D5).
+             * @enum {string}
+             */
+            sourceType: "LABOR_ENTRY" | "PART_ISSUE" | "SUBLET_ENTRY";
+            /** @description The labor entry / part issue / sublet entry this line comes from. */
+            sourceId: string;
+        };
+        InvoiceDiscountResponseDto: {
+            /** @enum {string} */
+            type: "PERCENT" | "AMOUNT";
+            /** @description A percentage (PERCENT) or an amount in the invoice currency (AMOUNT), as a decimal string. */
+            value: string;
+            reason: string;
+        };
+        InvoiceTotalsResponseDto: {
+            laborSubtotal: components["schemas"]["MoneyDto"];
+            partsSubtotal: components["schemas"]["MoneyDto"];
+            subletSubtotal: components["schemas"]["MoneyDto"];
+            subtotal: components["schemas"]["MoneyDto"];
+            discountTotal: components["schemas"]["MoneyDto"];
+            /** @description subtotal − discountTotal. */
+            taxableAmount: components["schemas"]["MoneyDto"];
+            /**
+             * @description The rate this invoice was calculated with.
+             * @example 14.000
+             */
+            taxRatePercent: string;
+            taxAmount: components["schemas"]["MoneyDto"];
+            /** @description taxableAmount + taxAmount. */
+            total: components["schemas"]["MoneyDto"];
+        };
+        PaymentReferenceResponseDto: {
+            id: string;
+            invoiceId: string;
+            /** @enum {string} */
+            method: "CASH" | "CARD" | "BANK_TRANSFER" | "CHEQUE" | "OTHER";
+            /** @description Receipt / transfer reference. */
+            reference: string;
+            amount: components["schemas"]["MoneyDto"];
+            paidAt: string;
+            createdAt: string;
+            updatedAt: string;
+            createdBy: string | null;
+            updatedBy: string | null;
+        };
+        InvoiceResponseDto: {
+            id: string;
+            /** @description Assigned when the invoice is issued (finalized); absent on a DRAFT. */
+            invoiceNumber?: string;
+            jobId: string;
+            jobNumber: string;
+            customerId: string;
+            /**
+             * @description DRAFT → ISSUED (finalized, locked) → PAID; VOID ends it.
+             * @enum {string}
+             */
+            status: "DRAFT" | "ISSUED" | "PAID" | "VOID";
+            currencyCode: string;
+            lines: components["schemas"]["InvoiceLineResponseDto"][];
+            discount?: components["schemas"]["InvoiceDiscountResponseDto"];
+            totals: components["schemas"]["InvoiceTotalsResponseDto"];
+            payments: components["schemas"]["PaymentReferenceResponseDto"][];
+            notes?: string;
+            /** @description When it was finalized (D36(c)). */
+            issuedAt?: string;
+            /** @description When payment was recorded (D36(c)). */
+            paidAt?: string;
+            voidReason?: string;
+            version: number;
+            createdAt: string;
+            updatedAt: string;
+            createdBy: string | null;
+            updatedBy: string | null;
+        };
+        InvoiceListResponseDto: {
+            items: components["schemas"]["InvoiceResponseDto"][];
+            page: components["schemas"]["PageMetaDto"];
+        };
+        DiscountDto: {
+            /** @enum {string} */
+            type: "PERCENT" | "AMOUNT";
+            value: string;
+            reason: string;
+        };
+        InvoiceUpdateRequestDto: {
+            version: number;
+            discount?: components["schemas"]["DiscountDto"] | null;
+            notes?: string;
+        };
+        SubletCostCreateRequestDto: {
+            description: string;
+            cost: components["schemas"]["MoneyDto"];
+            /** Format: uuid */
+            vendorId?: string;
+        };
+        SubletCostVoidRequestDto: {
+            reason: string;
+        };
+        InvoiceTransitionRequestDto: {
+            /** @enum {string} */
+            toStatus: "ISSUED" | "VOID";
+            reason?: string;
+        };
+        PaymentCreateRequestDto: {
+            /** @enum {string} */
+            method: "CASH" | "CARD" | "BANK_TRANSFER" | "CHEQUE" | "OTHER";
+            reference: string;
+            amount: components["schemas"]["MoneyDto"];
+            paidAt: string;
+        };
+        InvoiceSummaryResponseDto: {
+            jobId: string;
+            /** @example READY */
+            jobStage: string;
+            currencyCode: string;
+            lines: components["schemas"]["InvoiceLineResponseDto"][];
+            totals: components["schemas"]["InvoiceTotalsResponseDto"];
+            calculatedAt: string;
+        };
+        FinanceSettingsResponseDto: {
+            version: number;
+            /** @description The system currency — read-only. */
+            currencyCode: string;
+            /** @example 14.000 */
+            taxRatePercent: string;
+            /** @example VAT */
+            taxLabel: string;
+            updatedAt: string;
+            updatedBy: string | null;
+        };
+        FinanceSettingsUpdateDto: {
+            version: number;
+            taxRatePercent: string;
+            taxLabel?: string;
+        };
         VehicleResponseDto: {
             id: string;
             customerId: string;
@@ -1927,7 +2527,7 @@ export interface components {
         };
         JobApprovalSummaryResponseDto: {
             billableWorkAllowed: boolean;
-            approvedScopes: ("INITIAL_WORK" | "ADDITIONAL_WORK" | "SUBLET")[];
+            approvedScopes: ("INITIAL_WORK" | "ADDITIONAL_WORK")[];
             pendingApprovalCount: number;
         };
         JobResponseDto: {
@@ -2116,7 +2716,7 @@ export interface components {
             id: string;
             jobId: string;
             /** @enum {string} */
-            scope: "INITIAL_WORK" | "ADDITIONAL_WORK" | "SUBLET";
+            scope: "INITIAL_WORK" | "ADDITIONAL_WORK";
             description: string;
             /** @description The amount quoted to the customer (D36(b)); always present once APPROVED. */
             estimatedAmount?: components["schemas"]["MoneyDto"];
@@ -2149,7 +2749,7 @@ export interface components {
         };
         JobApprovalCreateRequest: {
             /** @enum {string} */
-            scope: "INITIAL_WORK" | "ADDITIONAL_WORK" | "SUBLET";
+            scope: "INITIAL_WORK" | "ADDITIONAL_WORK";
             description: string;
             estimatedAmount?: components["schemas"]["MoneyDto"];
             workItemIds?: string[];
@@ -2623,6 +3223,229 @@ export interface components {
             /** @enum {string} */
             decision: "APPROVED" | "REJECTED";
             reason?: string;
+        };
+        ApprovalTierResponseDto: {
+            /**
+             * @description POs whose total is at or above this need requiredApprovals approvals.
+             * @example 0.0000
+             */
+            minimumTotal: string;
+            /** @enum {number} */
+            requiredApprovals: 1 | 2;
+        };
+        PurchaseApprovalPolicyResponseDto: {
+            version: number;
+            currencyCode: string;
+            tiers: components["schemas"]["ApprovalTierResponseDto"][];
+            updatedAt: string;
+            updatedBy: string | null;
+        };
+        ApprovalTierDto: {
+            minimumTotal: string;
+            /** @enum {number} */
+            requiredApprovals: 1 | 2;
+        };
+        PurchaseApprovalPolicyUpdateDto: {
+            version: number;
+            tiers: components["schemas"]["ApprovalTierDto"][];
+        };
+        VendorResponseDto: {
+            id: string;
+            code: string;
+            name: string;
+            contactName?: string | null;
+            phone?: string | null;
+            email?: string | null;
+            /** @enum {string} */
+            status: "ACTIVE" | "INACTIVE";
+            createdAt: string;
+            updatedAt: string;
+            createdBy: string | null;
+            updatedBy: string | null;
+        };
+        VendorListResponseDto: {
+            items: components["schemas"]["VendorResponseDto"][];
+            page: components["schemas"]["PageMetaDto"];
+        };
+        VendorCreateDto: {
+            code: string;
+            name: string;
+            contactName?: string;
+            phone?: string;
+            /** Format: email */
+            email?: string;
+        };
+        VendorUpdateDto: {
+            name?: string;
+            contactName?: string;
+            phone?: string;
+            /** Format: email */
+            email?: string;
+            /** @enum {string} */
+            status?: "ACTIVE" | "INACTIVE";
+        };
+        PurchaseOrderLineResponseDto: {
+            id: string;
+            lineNumber: number;
+            partId: string;
+            sku: string;
+            quantityOrdered: number;
+            /** @description Cumulative accepted quantity across all receipts (never above ordered). */
+            quantityAccepted: number;
+            quantityRejected: number;
+            unitCost: components["schemas"]["MoneyDto"];
+            lineTotal: components["schemas"]["MoneyDto"];
+            /** @description UC-10B: set once the undelivered remainder was closed. */
+            remainderClosedAt?: string;
+            remainderClosedBy?: string;
+            remainderClosedReason?: string;
+        };
+        PurchaseOrderResponseDto: {
+            id: string;
+            /** @example PO-2026-000001 */
+            poNumber: string;
+            vendorId: string;
+            /** @description The receiving store. */
+            storeId: string;
+            /**
+             * @description RECEIVED = complete (every line received or its remainder closed). CANCELLED is never produced by the API.
+             * @enum {string}
+             */
+            status: "DRAFT" | "PENDING_APPROVAL" | "APPROVED" | "REJECTED" | "PARTIALLY_RECEIVED" | "RECEIVED" | "CANCELLED";
+            lines: components["schemas"]["PurchaseOrderLineResponseDto"][];
+            /** @description Sum of ordered quantity × unit cost — decides the approval threshold (D40(a)). */
+            total: components["schemas"]["MoneyDto"];
+            /**
+             * @description Fixed at submission; null while DRAFT.
+             * @enum {number|null}
+             */
+            requiredApprovals: 1 | 2 | null;
+            approvalsRecorded: number;
+            sourcePredictionId?: string | null;
+            /**
+             * @description Date only (YYYY-MM-DD).
+             * @example 2026-10-01
+             */
+            expectedDeliveryDate?: string | null;
+            notes?: string | null;
+            submittedAt?: string | null;
+            version: number;
+            createdAt: string;
+            updatedAt: string;
+            /** @description The Storekeeper who raised it. */
+            createdBy: string;
+            updatedBy: string | null;
+        };
+        PurchaseOrderListResponseDto: {
+            items: components["schemas"]["PurchaseOrderResponseDto"][];
+            page: components["schemas"]["PageMetaDto"];
+        };
+        PurchaseOrderLineRequestDto: {
+            /** Format: uuid */
+            partId: string;
+            quantityOrdered: number;
+            unitCost: components["schemas"]["MoneyDto"];
+        };
+        PurchaseOrderCreateDto: {
+            /** Format: uuid */
+            vendorId: string;
+            /** Format: uuid */
+            storeId: string;
+            lines: components["schemas"]["PurchaseOrderLineRequestDto"][];
+            /** Format: uuid */
+            sourcePredictionId?: string;
+            expectedDeliveryDate?: string;
+            notes?: string;
+        };
+        PurchaseOrderUpdateDto: {
+            version: number;
+            /** Format: uuid */
+            vendorId?: string;
+            lines?: components["schemas"]["PurchaseOrderLineRequestDto"][];
+            expectedDeliveryDate?: string;
+            notes?: string;
+        };
+        PurchaseOrderTransitionDto: {
+            /** @enum {string} */
+            toStatus: "PENDING_APPROVAL";
+        };
+        PurchaseOrderLineRemainderClosureDto: {
+            reason: string;
+        };
+        PurchaseApprovalResponseDto: {
+            id: string;
+            purchaseOrderId: string;
+            approverId: string;
+            /** @enum {string} */
+            decision: "APPROVED" | "REJECTED";
+            /** @description Always present on a rejection (D30). */
+            reason?: string | null;
+            decidedAt: string;
+        };
+        PurchaseApprovalListResponseDto: {
+            items: components["schemas"]["PurchaseApprovalResponseDto"][];
+            page: components["schemas"]["PageMetaDto"];
+        };
+        PurchaseApprovalRequestDto: {
+            /** @enum {string} */
+            decision: "APPROVED" | "REJECTED";
+            reason?: string;
+        };
+        GoodsReceiptLineResponseDto: {
+            purchaseOrderLineId: string;
+            partId: string;
+            quantityReceived: number;
+            /** @description Only this quantity enters stock. */
+            quantityAccepted: number;
+            quantityRejected: number;
+            rejectionReason?: string | null;
+            /** @description The stock movement the accepted quantity created (none when 0 accepted). */
+            stockMovementId?: string | null;
+        };
+        GoodsReceiptResponseDto: {
+            id: string;
+            /** @example GR-2026-000001 */
+            receiptNumber: string;
+            purchaseOrderId: string;
+            storeId: string;
+            deliveryReference?: string | null;
+            receivedAt: string;
+            lines: components["schemas"]["GoodsReceiptLineResponseDto"][];
+            createdAt: string;
+            updatedAt: string;
+            createdBy: string;
+            updatedBy: string | null;
+        };
+        GoodsReceiptListResponseDto: {
+            items: components["schemas"]["GoodsReceiptResponseDto"][];
+            page: components["schemas"]["PageMetaDto"];
+        };
+        GoodsReceiptLineRequestDto: {
+            /** Format: uuid */
+            purchaseOrderLineId: string;
+            quantityReceived: number;
+            quantityAccepted: number;
+            quantityRejected: number;
+            rejectionReason?: string;
+        };
+        GoodsReceiptCreateDto: {
+            deliveryReference?: string;
+            receivedAt?: string;
+            lines: components["schemas"]["GoodsReceiptLineRequestDto"][];
+        };
+        DataQualitySettingsResponseDto: {
+            version: number;
+            /**
+             * @description A record arriving later than this after its event counts as "late" (D36(f)).
+             * @example 1440
+             */
+            lateGracePeriodMinutes: number;
+            updatedAt: string;
+            updatedBy: string | null;
+        };
+        DataQualitySettingsUpdateDto: {
+            version: number;
+            lateGracePeriodMinutes: number;
         };
         TechnicianProfileResponseDto: {
             id: string;
@@ -3673,6 +4496,590 @@ export interface operations {
             };
             /** @description Not found — or outside what the caller may see. */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    InvoicesController_list: {
+        parameters: {
+            query?: {
+                page?: number;
+                pageSize?: number;
+                from?: string;
+                to?: string;
+                status?: "DRAFT" | "ISSUED" | "PAID" | "VOID";
+                jobId?: string;
+                customerId?: string;
+                invoiceNumber?: string;
+                sort?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InvoiceListResponseDto"];
+                };
+            };
+            /** @description Not signed in, or the session ended or expired. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The caller's role may not do this, or a password change is required first. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    InvoicesController_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                invoiceId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InvoiceResponseDto"];
+                };
+            };
+            /** @description Not signed in, or the session ended or expired. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The caller's role may not do this, or a password change is required first. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not found — or outside what the caller may see. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    InvoicesController_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                invoiceId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["InvoiceUpdateRequestDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InvoiceResponseDto"];
+                };
+            };
+            /** @description The request body or parameters are invalid. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not signed in, or the session ended or expired. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The caller's role may not do this, or a password change is required first. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not found — or outside what the caller may see. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    InvoicesController_addSubletCost: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                invoiceId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SubletCostCreateRequestDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InvoiceResponseDto"];
+                };
+            };
+            /** @description The request body or parameters are invalid. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not signed in, or the session ended or expired. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The caller's role may not do this, or a password change is required first. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not found — or outside what the caller may see. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    InvoicesController_voidSubletCost: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                invoiceId: string;
+                subletId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SubletCostVoidRequestDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InvoiceResponseDto"];
+                };
+            };
+            /** @description The request body or parameters are invalid. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not signed in, or the session ended or expired. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The caller's role may not do this, or a password change is required first. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not found — or outside what the caller may see. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    InvoicesController_transition: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                invoiceId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["InvoiceTransitionRequestDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InvoiceResponseDto"];
+                };
+            };
+            /** @description The request body or parameters are invalid. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not signed in, or the session ended or expired. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The caller's role may not do this, or a password change is required first. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not found — or outside what the caller may see. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    InvoicesController_recordPayment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                invoiceId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PaymentCreateRequestDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaymentReferenceResponseDto"];
+                };
+            };
+            /** @description The request body or parameters are invalid. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not signed in, or the session ended or expired. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The caller's role may not do this, or a password change is required first. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not found — or outside what the caller may see. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    JobInvoicesController_getSummary: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                jobId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InvoiceSummaryResponseDto"];
+                };
+            };
+            /** @description Not signed in, or the session ended or expired. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The caller's role may not do this, or a password change is required first. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not found — or outside what the caller may see. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    JobInvoicesController_regenerateInvoice: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                jobId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InvoiceResponseDto"];
+                };
+            };
+            /** @description Not signed in, or the session ended or expired. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The caller's role may not do this, or a password change is required first. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not found — or outside what the caller may see. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    FinanceSettingsController_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FinanceSettingsResponseDto"];
+                };
+            };
+            /** @description Not signed in, or the session ended or expired. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The caller's role may not do this, or a password change is required first. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    FinanceSettingsController_replace: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FinanceSettingsUpdateDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FinanceSettingsResponseDto"];
+                };
+            };
+            /** @description The request body or parameters are invalid. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not signed in, or the session ended or expired. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The caller's role may not do this, or a password change is required first. */
+            403: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -5219,7 +6626,7 @@ export interface operations {
                 page?: number;
                 pageSize?: number;
                 status?: "PENDING" | "APPROVED" | "REJECTED" | "WITHDRAWN";
-                scope?: "INITIAL_WORK" | "ADDITIONAL_WORK" | "SUBLET";
+                scope?: "INITIAL_WORK" | "ADDITIONAL_WORK";
                 sort?: string;
             };
             header?: never;
@@ -7251,6 +8658,936 @@ export interface operations {
             };
             /** @description Not found — or outside what the caller may see. */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    PurchaseApprovalPolicyController_getPolicy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PurchaseApprovalPolicyResponseDto"];
+                };
+            };
+            /** @description Not signed in, or the session ended or expired. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The caller's role may not do this, or a password change is required first. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    PurchaseApprovalPolicyController_replacePolicy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PurchaseApprovalPolicyUpdateDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PurchaseApprovalPolicyResponseDto"];
+                };
+            };
+            /** @description The request body or parameters are invalid. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not signed in, or the session ended or expired. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The caller's role may not do this, or a password change is required first. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    VendorsController_list: {
+        parameters: {
+            query?: {
+                page?: number;
+                pageSize?: number;
+                query?: string;
+                status?: "ACTIVE" | "INACTIVE";
+                sort?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VendorListResponseDto"];
+                };
+            };
+            /** @description Not signed in, or the session ended or expired. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The caller's role may not do this, or a password change is required first. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    VendorsController_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["VendorCreateDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VendorResponseDto"];
+                };
+            };
+            /** @description The request body or parameters are invalid. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not signed in, or the session ended or expired. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The caller's role may not do this, or a password change is required first. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    VendorsController_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                vendorId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["VendorUpdateDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VendorResponseDto"];
+                };
+            };
+            /** @description The request body or parameters are invalid. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not signed in, or the session ended or expired. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The caller's role may not do this, or a password change is required first. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not found — or outside what the caller may see. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    PurchaseOrdersController_list: {
+        parameters: {
+            query?: {
+                page?: number;
+                pageSize?: number;
+                from?: string;
+                to?: string;
+                status?: "DRAFT" | "PENDING_APPROVAL" | "APPROVED" | "REJECTED" | "PARTIALLY_RECEIVED" | "RECEIVED" | "CANCELLED";
+                vendorId?: string;
+                storeId?: string;
+                poNumber?: string;
+                sort?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PurchaseOrderListResponseDto"];
+                };
+            };
+            /** @description Not signed in, or the session ended or expired. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The caller's role may not do this, or a password change is required first. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    PurchaseOrdersController_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PurchaseOrderCreateDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PurchaseOrderResponseDto"];
+                };
+            };
+            /** @description The request body or parameters are invalid. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not signed in, or the session ended or expired. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The caller's role may not do this, or a password change is required first. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    PurchaseOrdersController_getById: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                purchaseOrderId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PurchaseOrderResponseDto"];
+                };
+            };
+            /** @description Not signed in, or the session ended or expired. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The caller's role may not do this, or a password change is required first. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not found — or outside what the caller may see. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    PurchaseOrdersController_discard: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                purchaseOrderId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Deleted — the draft no longer exists. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not signed in, or the session ended or expired. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The caller's role may not do this, or a password change is required first. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not found — or outside what the caller may see. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    PurchaseOrdersController_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                purchaseOrderId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PurchaseOrderUpdateDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PurchaseOrderResponseDto"];
+                };
+            };
+            /** @description The request body or parameters are invalid. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not signed in, or the session ended or expired. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The caller's role may not do this, or a password change is required first. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not found — or outside what the caller may see. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    PurchaseOrdersController_transition: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                purchaseOrderId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PurchaseOrderTransitionDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PurchaseOrderResponseDto"];
+                };
+            };
+            /** @description The request body or parameters are invalid. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not signed in, or the session ended or expired. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The caller's role may not do this, or a password change is required first. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not found — or outside what the caller may see. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    PurchaseOrdersController_closeLineRemainder: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                purchaseOrderId: string;
+                lineId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PurchaseOrderLineRemainderClosureDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PurchaseOrderResponseDto"];
+                };
+            };
+            /** @description The request body or parameters are invalid. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not signed in, or the session ended or expired. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The caller's role may not do this, or a password change is required first. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not found — or outside what the caller may see. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    PurchaseOrdersController_listApprovals: {
+        parameters: {
+            query?: {
+                page?: number;
+                pageSize?: number;
+                sort?: string;
+            };
+            header?: never;
+            path: {
+                purchaseOrderId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PurchaseApprovalListResponseDto"];
+                };
+            };
+            /** @description Not signed in, or the session ended or expired. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The caller's role may not do this, or a password change is required first. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not found — or outside what the caller may see. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    PurchaseOrdersController_decide: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                purchaseOrderId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PurchaseApprovalRequestDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PurchaseApprovalResponseDto"];
+                };
+            };
+            /** @description The request body or parameters are invalid. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not signed in, or the session ended or expired. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The caller's role may not do this, or a password change is required first. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not found — or outside what the caller may see. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    PurchaseOrdersController_listGoodsReceipts: {
+        parameters: {
+            query?: {
+                page?: number;
+                pageSize?: number;
+                sort?: string;
+            };
+            header?: never;
+            path: {
+                purchaseOrderId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GoodsReceiptListResponseDto"];
+                };
+            };
+            /** @description Not signed in, or the session ended or expired. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The caller's role may not do this, or a password change is required first. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not found — or outside what the caller may see. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    PurchaseOrdersController_createGoodsReceipt: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                purchaseOrderId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GoodsReceiptCreateDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GoodsReceiptResponseDto"];
+                };
+            };
+            /** @description The request body or parameters are invalid. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not signed in, or the session ended or expired. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The caller's role may not do this, or a password change is required first. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not found — or outside what the caller may see. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    DataQualitySettingsController_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DataQualitySettingsResponseDto"];
+                };
+            };
+            /** @description Not signed in, or the session ended or expired. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The caller's role may not do this, or a password change is required first. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    DataQualitySettingsController_replace: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DataQualitySettingsUpdateDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DataQualitySettingsResponseDto"];
+                };
+            };
+            /** @description The request body or parameters are invalid. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not signed in, or the session ended or expired. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The caller's role may not do this, or a password change is required first. */
+            403: {
                 headers: {
                     [name: string]: unknown;
                 };

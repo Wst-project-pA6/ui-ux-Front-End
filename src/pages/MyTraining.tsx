@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { Badge } from '../components/ui/Badge'
 import { PageHeader } from '../components/ui/PageHeader'
+import { DemoBadge } from '../components/common/DemoBadge'
 import { useToast } from '../components/ui/Toast'
 
 const studentName = 'Rayan Omar'
@@ -148,6 +149,7 @@ export default function MyTraining() {
       <PageHeader
         title="My Training"
         subtitle={`${course} · ${group}`}
+        badge={<DemoBadge />}
       />
 
       {/* Student card */}

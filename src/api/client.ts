@@ -52,6 +52,7 @@ async function performRefresh(): Promise<{
   accessToken: string
   refreshToken: string
 }> {
+  const startEpoch = tokenStorage.getEpoch()
   const refreshToken = tokenStorage.getRefreshToken()
   if (!refreshToken) {
     throw new ApiError({
@@ -69,6 +70,15 @@ async function performRefresh(): Promise<{
       skipAuthRefresh: true,
     },
   )
+  // Logout during refresh must not restore authentication: discard late results.
+  if (tokenStorage.getEpoch() !== startEpoch) {
+    throw new ApiError({
+      message: 'Session ended during refresh.',
+      code: 'UNAUTHENTICATED',
+      status: 401,
+    })
+  }
+  // Store the ROTATED refresh token immediately — the old one is single-use.
   tokenStorage.setAccessToken(pair.accessToken)
   tokenStorage.setRefreshToken(pair.refreshToken)
   return pair
@@ -224,7 +234,18 @@ export async function request<T>(
       }
     }
 
-    if (!response.ok) throw await toApiError(response)
+    if (!response.ok) {
+      const apiError = await toApiError(response)
+      // Forced password change: route the user to the change-password flow.
+      if (response.status === 403 && apiError.code === 'PASSWORD_CHANGE_REQUIRED') {
+        try {
+          window.dispatchEvent(new CustomEvent('wst:password-required'))
+        } catch {
+          /* non-browser runtime */
+        }
+      }
+      throw apiError
+    }
     if (response.status === 204) return undefined as T
     const text = await response.text()
     if (!text) return undefined as T

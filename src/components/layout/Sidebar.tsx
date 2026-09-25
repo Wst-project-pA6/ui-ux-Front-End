@@ -1,7 +1,6 @@
 import React from 'react'
 import { NavLink, useNavigate } from 'react-router-dom'
 import { useLang } from '../../i18n/LanguageContext'
-import { useRole } from '../../context/RoleContext'
 import type { TranslationKey } from '../../i18n/translations'
 
 interface NavItem {
@@ -246,17 +245,80 @@ const navItems: NavItem[] = [
       </svg>
     ),
   },
+  {
+    label: 'Notifications',
+    path: '/notifications',
+    icon: (
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+        <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+      </svg>
+    ),
+  },
+  {
+    label: 'Audit Log',
+    path: '/audit-log',
+    icon: (
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+        <polyline points="14 2 14 8 20 8" />
+      </svg>
+    ),
+  },
+  {
+    label: 'Bays',
+    path: '/bays',
+    icon: (
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+        <rect x="3" y="3" width="18" height="18" rx="2" />
+        <line x1="3" y1="9" x2="21" y2="9" />
+      </svg>
+    ),
+  },
+  {
+    label: 'Service Types',
+    path: '/service-types',
+    icon: (
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+        <circle cx="12" cy="12" r="3" />
+        <path d="M12 2v4M12 18v4M2 12h4M18 12h4" />
+      </svg>
+    ),
+  },
+  {
+    label: 'Technicians',
+    path: '/technician-profiles',
+    icon: (
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+        <circle cx="9" cy="7" r="4" />
+      </svg>
+    ),
+  },
+  {
+    label: 'Operating Hours',
+    path: '/operating-hours',
+    icon: (
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+        <circle cx="12" cy="12" r="10" />
+        <polyline points="12 6 12 12 16 14" />
+      </svg>
+    ),
+  },
 ]
 
 interface SidebarProps {
   collapsed: boolean
   filteredPaths?: string[]
+  displayName?: string
+  displaySub?: string
+  initials?: string
+  onLogout?: () => void
 }
 
-export function Sidebar({ collapsed, filteredPaths }: SidebarProps) {
+export function Sidebar({ collapsed, filteredPaths, displayName, displaySub, initials, onLogout }: SidebarProps) {
   const navigate = useNavigate()
   const { t, lang, setLang } = useLang()
-  const { config } = useRole()
 
   const visibleItems = filteredPaths
     ? navItems.filter((item) => filteredPaths.includes(item.path))
@@ -327,23 +389,26 @@ export function Sidebar({ collapsed, filteredPaths }: SidebarProps) {
         </div>
       )}
 
-      {/* User */}
+      {/* User — backend identity */}
       <div className={`border-t border-slate-800 px-4 py-4 ${collapsed ? 'flex justify-center' : ''}`}>
         {collapsed ? (
           <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-white text-xs font-bold">
-            {config.initials}
+            {initials ?? '••'}
           </div>
         ) : (
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-white text-xs font-bold shrink-0">
-              {config.initials}
+              {initials ?? '••'}
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm text-white font-medium truncate">{config.userName}</p>
-              <p className="text-xs text-slate-400 truncate">{config.userLabel}</p>
+              <p className="text-sm text-white font-medium truncate">{displayName ?? ''}</p>
+              <p className="text-xs text-slate-400 truncate">{displaySub ?? ''}</p>
             </div>
             <button
-              onClick={() => navigate('/')}
+              onClick={() => {
+                if (onLogout) onLogout()
+                else navigate('/')
+              }}
               title={t('nav.logout')}
               className="text-slate-400 hover:text-white transition-colors"
             >

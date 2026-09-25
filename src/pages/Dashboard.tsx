@@ -3,8 +3,10 @@ import { useNavigate } from 'react-router-dom'
 import { KPICard } from '../components/ui/Card'
 import { Badge } from '../components/ui/Badge'
 import { PageHeader } from '../components/ui/PageHeader'
+import { DemoBadge } from '../components/common/DemoBadge'
 import { useLang } from '../i18n/LanguageContext'
-import { useRole } from '../context/RoleContext'
+import { useAuth } from '../context/AuthContext'
+import { canAccessPath } from '../auth/access'
 
 function useExportToast() {
   const [visible, setVisible] = useState(false)
@@ -45,7 +47,8 @@ const techUtilization = [
 export default function Dashboard() {
   const navigate = useNavigate()
   const { t } = useLang()
-  const { canAccess } = useRole()
+  const { permissions } = useAuth()
+  const canAccess = (path: string) => canAccessPath(permissions, path)
   const exportToast = useExportToast()
 
   const handleExport = () => {
@@ -89,6 +92,7 @@ export default function Dashboard() {
       <PageHeader
         title={t('dashboard.title')}
         subtitle={t('dashboard.subtitle')}
+        badge={<DemoBadge />}
         actions={
           <button
             onClick={handleExport}
