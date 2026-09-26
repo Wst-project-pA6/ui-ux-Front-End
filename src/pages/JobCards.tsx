@@ -68,6 +68,7 @@ export default function JobCards() {
   // Create form
   const [createOpen, setCreateOpen] = useState(false)
   const [serviceTypes, setServiceTypes] = useState<{ id: string; name: string; code?: string }[]>([])
+  const [vehicles, setVehicles] = useState<{ id: string; plate: string; make: string; model: string; year: number; mileage: number }[]>([])
   const [createForm, setCreateForm] = useState({ vehicleId: '', complaint: '', serviceTypeId: '', priority: 'NORMAL', mileageAtIntake: '', expectedCompletionAt: '', workItems: '' })
   const [createError, setCreateError] = useState<unknown>(null)
   const [intakePhotos, setIntakePhotos] = useState<string[]>([])
@@ -165,15 +166,17 @@ export default function JobCards() {
 
   const loadPickers = useCallback(async () => {
     try {
-      const [st, b, tc] = await Promise.all([
+      const [st, b, tc, vs] = await Promise.all([
         serviceTypesV3.list({ page: 1, pageSize: 100 }).catch(() => ({ items: [] })),
         baysV3.list({ page: 1, pageSize: 100 }).catch(() => ({ items: [] })),
         techniciansV3.list({ page: 1, pageSize: 100 }).catch(() => ({ items: [] })),
+        vehiclesV3.list({ page: 1, pageSize: 100, status: 'ACTIVE' }).catch(() => ({ items: [] })),
       ])
       const stItems = Array.isArray(st) ? st : (st as { items: never[] }).items ?? []
       setServiceTypes((stItems as unknown as { id: string; name: string }[]).map((s) => ({ id: s.id, name: (s as unknown as { name?: string }).name ?? s.id })))
       setBays((((b as { items: never[] }).items ?? []) as unknown as { id: string; name: string }[]))
       setTechnicians((((tc as { items: never[] }).items ?? []) as unknown as { id: string; displayName: string }[]))
+      setVehicles((((vs as { items: never[] }).items ?? []) as unknown as { id: string; plate: string; make: string; model: string; year: number; mileage: number }[]))
     } catch { /* pickers optional */ }
   }, [])
 
@@ -187,8 +190,21 @@ export default function JobCards() {
       setCreateError(new ApiError({ message: 'Vehicle, complaint and service type are required.', code: 'BAD_REQUEST', status: 400 }))
       return
     }
+    if (createForm.complaint.trim().length < 3 || createForm.complaint.trim().length > 2000) {
+      setCreateError(new ApiError({ message: 'Complaint must be 3–2000 characters.', code: 'BAD_REQUEST', status: 400 }))
+      return
+    }
     if (!createForm.expectedCompletionAt) {
       setCreateError(new ApiError({ message: 'Expected completion is required (contract v4).', code: 'BAD_REQUEST', status: 400 }))
+      return
+    }
+    if (createForm.mileageAtIntake === '' || !Number.isInteger(Number(createForm.mileageAtIntake)) || Number(createForm.mileageAtIntake) < 0) {
+      setCreateError(new ApiError({ message: 'Mileage at intake is required (whole number ≥ 0) and must be ≥ vehicle mileage.', code: 'BAD_REQUEST', status: 400 }))
+      return
+    }
+    const selectedVehicle = vehicles.find((x) => x.id === createForm.vehicleId)
+    if (selectedVehicle && Number(createForm.mileageAtIntake) < selectedVehicle.mileage) {
+      setCreateError(new ApiError({ message: `Mileage at intake (${createForm.mileageAtIntake}) is below the vehicle's recorded mileage (${selectedVehicle.mileage}).`, code: 'BAD_REQUEST', status: 400 }))
       return
     }
     setSaving(true)
@@ -256,6 +272,10 @@ export default function JobCards() {
       showToast('error', 'Bay and technician required', '')
       return
     }
+    if (!assignForm.scheduledStartAt || !assignForm.expectedCompletionAt) {
+      showToast('error', 'Schedule required', 'Scheduled start and expected completion are required (contract: JobAssignmentDto).')
+      return
+    }
     setSaving(true)
     setConflicts([])
     try {
@@ -263,8 +283,8 @@ export default function JobCards() {
         version: (detail as unknown as { version?: number }).version,
         bayId: assignForm.bayId,
         technicianId: assignForm.technicianId,
-        scheduledStartAt: assignForm.scheduledStartAt ? new Date(assignForm.scheduledStartAt).toISOString() : undefined,
-        expectedCompletionAt: assignForm.expectedCompletionAt ? new Date(assignForm.expectedCompletionAt).toISOString() : undefined,
+        scheduledStartAt: new Date(assignForm.scheduledStartAt).toISOString(),
+        expectedCompletionAt: new Date(assignForm.expectedCompletionAt).toISOString(),
         ...(assignForm.overrideReason.trim() ? { overrideReason: assignForm.overrideReason.trim() } : {}),
       } as never)
       setDetail(updated)
@@ -293,7 +313,9 @@ export default function JobCards() {
             <button onClick={() => setView('table')} className={`px-3 py-1.5 text-sm font-medium ${view === 'table' ? 'bg-slate-900 text-white' : 'text-slate-600'}`}>{t('jobCards.view.table')}</button>
             <button onClick={() => setView('kanban')} className={`px-3 py-1.5 text-sm font-medium ${view === 'kanban' ? 'bg-slate-900 text-white' : 'text-slate-600'}`}>{t('jobCards.view.kanban')}</button>
           </div>
-          {canCreate && <Button onClick={() => { setCreateError(null); setCreateOpen(true) }}>{t('jobCards.newBtn')}</Button>}
+          {canCreate
+            ? <Button onClick={() => { setCreateError(null); setCreateOpen(true) }}>{t('jobCards.newBtn')}</Button>
+            : <span title="Requires jobs.create permission"><Button disabled>{t('jobCards.newBtn')}</Button></span>}
         </>} />
 
       <div className="flex items-center gap-3 flex-wrap">
@@ -303,7 +325,7 @@ export default function JobCards() {
           {STAGES.map((s) => <option key={s} value={s}>{s}</option>)}
         </select>
         <select value={priority} onChange={(e) => { setPriority(e.target.value); setPage(1) }} className="h-9 px-3 border border-slate-200 rounded-lg text-sm bg-white">
-          <option value="">All priorities</option><option value="HIGH">High</option><option value="NORMAL">Normal</option><option value="LOW">Low</option>
+          <option value="">All priorities</option><option value="HIGH">High</option><option value="NORMAL">Normal</option><option value="LOW">Low</option><option value="URGENT">Urgent</option>
         </select>
         {(stage || priority || q) && <button onClick={() => { setQ(''); setStage(''); setPriority(''); setPage(1) }} className="text-xs text-slate-500 font-medium">Clear filters</button>}
       </div>
@@ -383,6 +405,7 @@ export default function JobCards() {
             <Button variant="secondary" onClick={() => setDetailId(null)}>{t('action.close')}</Button>
             {detail && stageOf(detail) === 'RECEIVED' && canStart && <Button disabled={saving} onClick={() => setPendingTransition('IN_PROGRESS')}>Start work</Button>}
             {detail && stageOf(detail) === 'IN_PROGRESS' && canSubmitQc && <Button disabled={saving} onClick={() => setPendingTransition('QUALITY_CHECK')}>Send to quality check</Button>}
+            {detail && stageOf(detail) === 'QUALITY_CHECK' && canQuality && <Button disabled={saving} onClick={() => setPendingTransition('READY')}>Mark ready (QC passed)</Button>}
             {detail && stageOf(detail) === 'READY' && canDeliver && <Button disabled={saving} onClick={() => setPendingTransition('DELIVERED')}>Deliver</Button>}
           </>}>
           {detailLoading || !detail ? <LoadingState /> : (
@@ -449,7 +472,21 @@ export default function JobCards() {
         footer={<><Button variant="secondary" disabled={saving} onClick={() => setCreateOpen(false)}>Cancel</Button><Button disabled={saving} onClick={create}>{saving ? 'Creating…' : 'Create'}</Button></>}>
         <div className="flex flex-col gap-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <Input label="Vehicle ID (UUID)" value={createForm.vehicleId} onChange={(e) => setCreateForm({ ...createForm, vehicleId: e.target.value })} required placeholder="Pick a vehicle, paste its UUID" />
+            {vehicles.length > 0 ? (
+              <Select label="Vehicle" value={createForm.vehicleId}
+                onChange={(e) => {
+                  const id = e.target.value
+                  const v = vehicles.find((x) => x.id === id)
+                  setCreateForm({
+                    ...createForm,
+                    vehicleId: id,
+                    mileageAtIntake: v && !createForm.mileageAtIntake ? String(v.mileage) : createForm.mileageAtIntake,
+                  })
+                }}
+                options={[{ value: '', label: 'Select vehicle' }, ...vehicles.map((x) => ({ value: x.id, label: `${x.plate} · ${x.make} ${x.model} (${x.year}) · ${x.mileage} km` }))]} required />
+            ) : (
+              <Input label="Vehicle ID (UUID)" value={createForm.vehicleId} onChange={(e) => setCreateForm({ ...createForm, vehicleId: e.target.value })} required placeholder="Pick a vehicle, paste its UUID" />
+            )}
             <Select label="Service type" value={createForm.serviceTypeId} onChange={(e) => setCreateForm({ ...createForm, serviceTypeId: e.target.value })}
               options={[{ value: '', label: 'Select type' }, ...serviceTypes.map((s) => ({ value: s.id, label: s.name }))]} required />
           </div>

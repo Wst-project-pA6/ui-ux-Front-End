@@ -257,17 +257,15 @@ export async function request<T>(
 
 /**
  * Fetches an absolute download URL (from POST /attachments/.../download-authorizations)
- * with the Bearer token and returns a blob object URL for <img> / download links.
+ * and returns a blob object URL for <img> / download links.
  * Callers must revoke the URL when done (URL.revokeObjectURL).
- * The signed URL only works for the requesting user and only briefly.
+ * The signed URL itself is the capability — no Authorization header is sent
+ * so the storage host needs no CORS preflight for custom headers.
  */
 export async function fetchAuthenticatedBlob(absoluteUrl: string): Promise<string> {
-  const token = tokenStorage.getAccessToken()
   let response: Response
   try {
-    response = await fetch(absoluteUrl, {
-      headers: token ? { Authorization: `Bearer ${token}` } : undefined,
-    })
+    response = await fetch(absoluteUrl)
   } catch {
     throw new ApiError({
       message: 'Cannot reach the server. Check your connection or backend availability.',

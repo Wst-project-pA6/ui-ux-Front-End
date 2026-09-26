@@ -37,7 +37,9 @@ export const ROUTE_PERMISSIONS: Record<string, string[]> = {
   '/certificates': ['training.read', 'students.self'],
   '/reports': ['exports.read', 'exports.create'],
   '/ai-insights': ['predictions.reorder.read', 'predictions.risk.read', 'dashboards.ai-data'],
-  '/role-matrix': [],
+  // Admin-only: role matrix is reference data for user administration.
+  // Only SYSTEM_ADMIN holds roles.assign (see S07/schema.sql grants).
+  '/role-matrix': ['roles.assign'],
   '/change-password': [],
 }
 

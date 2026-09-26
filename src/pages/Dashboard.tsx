@@ -6,6 +6,7 @@ import { useToast } from '../components/ui/Toast'
 import { useLang } from '../i18n/LanguageContext'
 import { useAuth } from '../context/AuthContext'
 import { dashboardsV3, type DashboardData, type DashboardFilters } from '../api/v6/insights'
+import { jobsV3 } from '../api/v3/jobs'
 import { PERMS, formatMoney, backendErrorMessage } from '../api/v3/types'
 import { LoadingState, EmptyState, ErrorState } from '../components/common/ApiStates'
 
@@ -38,6 +39,15 @@ export default function Dashboard() {
   const [state, setState] = useState<'idle' | 'loading' | 'success' | 'error'>('idle')
   const [error, setError] = useState<unknown>(null)
 
+  // Permissions arrive asynchronously after /auth/me — sync the active tab
+  // once the available list is known.
+  useEffect(() => {
+    if (available.length > 0 && !available.some((d) => d.key === active)) {
+      setActive(available[0].key)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [available.length])
+
   const load = useCallback(async () => {
     setState('loading')
     setError(null)
@@ -60,15 +70,10 @@ export default function Dashboard() {
   useEffect(() => {
     if (available.length > 0) load()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [active])
+  }, [active, available.length])
 
   if (available.length === 0) {
-    return (
-      <div className="space-y-6">
-        <PageHeader title={t('dash.title')} subtitle={t('dash.noAccess')} />
-        <EmptyState title={t('dash.noAccess')} hint={t('dash.noAccessHint')} />
-      </div>
-    )
+    return <QcFallback />
   }
 
   const applyFilters = () => load()
@@ -148,6 +153,66 @@ export default function Dashboard() {
             </Button>
           </p>
         </>
+      )}
+    </div>
+  )
+}
+
+/**
+ * WST-B7: Quality Checkers hold jobs.read.quality-scope + quality.perform
+ * but no dashboards.* permission, so the metrics dashboard is empty for them.
+ * Show their real work queue (jobs in QUALITY_CHECK) instead of "no access".
+ */
+function QcFallback() {
+  const { t } = useLang()
+  const { hasPermission } = useAuth()
+  const [items, setItems] = useState<{ id: string; jobNumber: string }[]>([])
+  const [state, setState] = useState<'idle' | 'loading' | 'success' | 'error'>('idle')
+  const [error, setError] = useState<unknown>(null)
+
+  const canQc = hasPermission(PERMS.jobsReadQuality) || hasPermission(PERMS.qualityPerform)
+
+  const load = useCallback(async () => {
+    if (!canQc) return
+    setState('loading')
+    try {
+      const res = await jobsV3.list({ stage: 'QUALITY_CHECK', page: 1, pageSize: 20 })
+      setItems(res.items)
+      setState('success')
+    } catch (err) {
+      setError(err)
+      setState('error')
+    }
+  }, [canQc])
+
+  useEffect(() => { load() }, [load])
+
+  if (!canQc) {
+    return (
+      <div className="space-y-6">
+        <PageHeader title={t('dash.title')} subtitle={t('dash.noAccess')} />
+        <EmptyState title={t('dash.noAccess')} hint={t('dash.noAccessHint')} />
+      </div>
+    )
+  }
+
+  return (
+    <div className="space-y-6">
+      <PageHeader title={t('dash.title')} subtitle="Quality queue — jobs awaiting QC" />
+      {state === 'loading' && <LoadingState label={t('dash.loading')} />}
+      {state === 'error' && <ErrorState error={error} onRetry={load} title="Failed to load quality queue" />}
+      {state === 'success' && items.length === 0 && (
+        <EmptyState title="No jobs in quality check" hint="Jobs sent to QUALITY_CHECK appear here. Notifications are not the work queue." />
+      )}
+      {state === 'success' && items.length > 0 && (
+        <div className="bg-white border border-slate-200 rounded-xl divide-y divide-slate-50">
+          {items.map((j) => (
+            <div key={j.id} className="px-4 py-3 flex items-center gap-3">
+              <span className="font-mono text-xs text-blue-600" dir="ltr">{j.jobNumber}</span>
+              <span className="text-xs text-slate-500 ms-auto">Open via Job Cards → quality tab</span>
+            </div>
+          ))}
+        </div>
       )}
     </div>
   )

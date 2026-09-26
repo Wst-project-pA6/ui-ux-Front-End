@@ -21,7 +21,8 @@ export type Money = Schemas['MoneyDto']
 export function formatMoney(m?: Money | null, fallback = '—'): string {
   if (!m) return fallback
   const [int, dec = ''] = m.amount.split('.')
-  const grouped = Number(int).toLocaleString('en-US')
+  const locale = typeof document !== 'undefined' && document.documentElement.lang === 'ar' ? 'ar-EG' : 'en-US'
+  const grouped = Number(int).toLocaleString(locale)
   const frac = (dec + '0000').slice(0, 4).replace(/0+$/, '') || '0'
   return `${grouped}.${frac} ${m.currency}`
 }

@@ -38,9 +38,9 @@ export default function Customers() {
   const canRead = hasPermission(PERMS.customersRead)
   const canWrite = hasPermission(PERMS.customersWrite)
   const canErase = hasPermission(PERMS.customersErasure)
-  // When /auth/me is unreachable (offline preview) fall back to allowing reads
-  // so the page still attempts the real API and shows a real error state.
-  const permissive = true
+  // Permission gate is enforced: users without customers.read see the
+  // no-permission screen instead of a raw API error.
+  const permissive = false
 
   const [items, setItems] = useState<Customer[]>([])
   const [pageMeta, setPageMeta] = useState({ page: 1, pageSize: PAGE_SIZE, totalItems: 0, totalPages: 1 })
@@ -284,7 +284,11 @@ export default function Customers() {
             >
               {t('customers.addBtn')}
             </Button>
-          ) : undefined
+          ) : (
+            <span title="Requires customers.write permission">
+              <Button disabled>{t('customers.addBtn')}</Button>
+            </span>
+          )
         }
       />
 

@@ -91,7 +91,7 @@ function SessionsTab({ canManage }: { canManage: boolean }) {
   const [groups, setGroups] = useState<TrainingGroup[]>([])
   const [bays, setBays] = useState<{ id: string; name: string }[]>([])
   const [mentors, setMentors] = useState<{ id: string; displayName?: string }[]>([])
-  const [form, setForm] = useState({ title: '', courseId: '', groupIds: '', bayId: '', mentorId: '', capacity: '', startsAt: '', endsAt: '' })
+  const [form, setForm] = useState({ title: '', courseId: '', groupIds: [] as string[], bayId: '', mentorId: '', capacity: '', startsAt: '', endsAt: '' })
   const [saveError, setSaveError] = useState<unknown>(null)
 
   const [attendOpen, setAttendOpen] = useState(false)
@@ -141,7 +141,7 @@ function SessionsTab({ canManage }: { canManage: boolean }) {
 
   const openCreate = () => {
     setEditing(null)
-    setForm({ title: '', courseId: '', groupIds: '', bayId: '', mentorId: '', capacity: '', startsAt: '', endsAt: '' })
+    setForm({ title: '', courseId: '', groupIds: [], bayId: '', mentorId: '', capacity: '', startsAt: '', endsAt: '' })
     setSaveError(null)
     setCreateOpen(true)
   }
@@ -152,7 +152,7 @@ function SessionsTab({ canManage }: { canManage: boolean }) {
     setForm({
       title: (r.title as string) ?? '',
       courseId: (r.courseId as string) ?? '',
-      groupIds: ((r.groupIds as string[]) ?? []).join(','),
+      groupIds: ((r.groupIds as string[]) ?? []),
       bayId: (r.bayId as string) ?? '',
       mentorId: (r.mentorId as string) ?? '',
       capacity: String(r.capacity ?? ''),
@@ -169,18 +169,34 @@ function SessionsTab({ canManage }: { canManage: boolean }) {
       setSaveError(new ApiError({ message: 'Title, course, bay, mentor, start and end are required.', code: 'BAD_REQUEST', status: 400 }))
       return
     }
+    const groupIds = form.groupIds
+    if (groupIds.length === 0) {
+      setSaveError(new ApiError({ message: 'At least one group is required (groupIds minItems 1).', code: 'BAD_REQUEST', status: 400 }))
+      return
+    }
+    const capacity = Number(form.capacity)
+    if (!form.capacity || !Number.isInteger(capacity) || capacity < 1) {
+      setSaveError(new ApiError({ message: 'Capacity is required (whole number ≥ 1).', code: 'BAD_REQUEST', status: 400 }))
+      return
+    }
+    const startsAt = new Date(form.startsAt)
+    const endsAt = new Date(form.endsAt)
+    if (Number.isNaN(startsAt.getTime()) || Number.isNaN(endsAt.getTime()) || startsAt >= endsAt) {
+      setSaveError(new ApiError({ message: 'End must be after start (startsAt < endsAt).', code: 'BAD_REQUEST', status: 400 }))
+      return
+    }
     setBusy(true)
     setSaveError(null)
     try {
       const payload = {
         title: form.title.trim(),
         courseId: form.courseId,
-        groupIds: form.groupIds.split(',').map((s) => s.trim()).filter(Boolean),
+        groupIds,
         bayId: form.bayId,
         mentorId: form.mentorId,
-        capacity: Number(form.capacity),
-        startsAt: new Date(form.startsAt).toISOString(),
-        endsAt: new Date(form.endsAt).toISOString(),
+        capacity,
+        startsAt: startsAt.toISOString(),
+        endsAt: endsAt.toISOString(),
       }
       if (editing) {
         await trainingV3.updateSession(editing.id, {
@@ -297,7 +313,11 @@ function SessionsTab({ canManage }: { canManage: boolean }) {
             <option value="">{t('ai.allStatuses')}</option>
             {['DRAFT', 'PUBLISHED', 'COMPLETED', 'CANCELLED'].map((s) => <option key={s} value={s}>{s}</option>)}
           </select>
-          {canManage && <Button size="sm" onClick={openCreate}>{t('training.sessions.new')}</Button>}
+          {canManage ? (
+            <Button size="sm" onClick={openCreate}>{t('training.sessions.new')}</Button>
+          ) : (
+            <span className="text-xs text-slate-400" title="Requires training.manage permission">New session (no permission)</span>
+          )}
           <span className="text-xs text-slate-400 ms-auto">{meta.totalItems} · {t('training.sessions.title')}</span>
         </div>
         {state === 'loading' && <div className="p-4"><LoadingState /></div>}
@@ -386,7 +406,32 @@ function SessionsTab({ canManage }: { canManage: boolean }) {
             <Input label={t('f.startsAt')} type="datetime-local" value={form.startsAt} onChange={(e) => setForm({ ...form, startsAt: e.target.value })} required />
             <Input label={t('f.endsAt')} type="datetime-local" value={form.endsAt} onChange={(e) => setForm({ ...form, endsAt: e.target.value })} required />
           </div>
-          <Input label={t('f.groupIds')} value={form.groupIds} onChange={(e) => setForm({ ...form, groupIds: e.target.value })} required />
+          <div>
+            <p className="text-sm font-medium mb-1">{t('f.groupIds')} *</p>
+            {groups.length === 0 ? (
+              <Input label={t('f.groupIds')} value="" onChange={() => {}} placeholder="No groups loaded — reload the page" />
+            ) : (
+              <div className="border border-slate-200 rounded-lg p-2 max-h-32 overflow-y-auto flex flex-col gap-1">
+                {groups.map((g) => {
+                  const name = (g as unknown as { name?: string }).name ?? g.id.slice(0, 8)
+                  const checked = form.groupIds.includes(g.id)
+                  return (
+                    <label key={g.id} className="flex items-center gap-2 text-sm px-1 py-0.5 hover:bg-slate-50 rounded cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={checked}
+                        onChange={() => setForm({
+                          ...form,
+                          groupIds: checked ? form.groupIds.filter((x) => x !== g.id) : [...form.groupIds, g.id],
+                        })}
+                      />
+                      <span>{name}</span>
+                    </label>
+                  )
+                })}
+              </div>
+            )}
+          </div>
           {saveError ? <FieldErrors error={saveError} /> : null}
         </div>
       </Modal>

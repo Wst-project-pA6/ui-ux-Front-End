@@ -50,6 +50,7 @@ export default function Vehicles() {
   const [saveError, setSaveError] = useState<unknown>(null)
   const [archiveTarget, setArchiveTarget] = useState<Vehicle | null>(null)
   const [busy, setBusy] = useState(false)
+  const [customerOptions, setCustomerOptions] = useState<{ id: string; displayName: string }[]>([])
 
   // Reminders
   const [reminders, setReminders] = useState<never[]>([])
@@ -83,6 +84,13 @@ export default function Vehicles() {
 
   useEffect(() => { load() }, [load])
 
+  useEffect(() => {
+    customersV3.list({ page: 1, pageSize: 100 }).then(
+      (res) => setCustomerOptions(res.items.map((c) => ({ id: c.id, displayName: c.displayName }))),
+      () => {},
+    )
+  }, [])
+
   const openDetail = async (v: Vehicle) => {
     setDetailLoading(true)
     try {
@@ -111,8 +119,10 @@ export default function Vehicles() {
     const year = Number(form.year)
     if (!form.year || !Number.isInteger(year) || year < 1950 || year > 2100) next.year = 'Enter a valid year (1950–2100).'
     if (form.plate.trim().length < 2) next.plate = 'Plate number is required.'
-    if (form.vin.trim() && !/^[A-HJ-NPR-Z0-9]{17}$/i.test(form.vin.trim())) next.vin = 'VIN must be 17 characters (no I, O, Q).'
-    if (form.mileage !== '' && (!(Number(form.mileage) >= 0) || !Number.isInteger(Number(form.mileage)))) next.mileage = 'Mileage must be a whole number ≥ 0.'
+    if (!form.vin.trim()) next.vin = 'VIN is required (17 characters, no I, O, Q).'
+    else if (!/^[A-HJ-NPR-Z0-9]{17}$/i.test(form.vin.trim())) next.vin = 'VIN must be 17 characters (no I, O, Q).'
+    if (form.mileage === '') next.mileage = 'Mileage is required (whole number ≥ 0).'
+    else if (!(Number(form.mileage) >= 0) || !Number.isInteger(Number(form.mileage))) next.mileage = 'Mileage must be a whole number ≥ 0.'
     setErrors(next)
     return Object.keys(next).length === 0
   }
@@ -140,7 +150,8 @@ export default function Vehicles() {
           make: form.make.trim(),
           model: form.model.trim(),
           year: Number(form.year),
-          ...(form.mileage !== '' ? { mileage: Number(form.mileage), mileageUnit: form.mileageUnit } : {}),
+          mileage: Number(form.mileage),
+          mileageUnit: form.mileageUnit as 'KM' | 'MI',
         } as never)
         showToast('success', 'Vehicle registered', (created as unknown as { plate?: string }).plate ?? '')
       }
@@ -211,7 +222,9 @@ export default function Vehicles() {
   return (
     <div className="space-y-6">
       <PageHeader title={t('vehicles.title')} subtitle={`${meta.totalItems} vehicles`}
-        actions={canWrite ? <Button onClick={() => { setEditing(null); setForm({ ...emptyForm, customerId }); setErrors({}); setSaveError(null); setAddOpen(true) }}>{t('vehicles.registerBtn')}</Button> : undefined} />
+        actions={canWrite
+          ? <Button onClick={() => { setEditing(null); setForm({ ...emptyForm, customerId }); setErrors({}); setSaveError(null); setAddOpen(true) }}>{t('vehicles.registerBtn')}</Button>
+          : <span title="Requires vehicles.write permission"><Button disabled>{t('vehicles.registerBtn')}</Button></span>} />
 
       <div className="bg-white border border-slate-200 rounded-xl">
         <div className="flex flex-col gap-2 px-4 py-3 border-b border-slate-100 md:flex-row md:items-center md:gap-3">
@@ -252,6 +265,15 @@ export default function Vehicles() {
                         <td className="px-6 py-4"><Badge variant={badgeVariantFor(String(r.status ?? 'ACTIVE'))} /></td>
                         <td className="px-6 py-4"><div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
                           {canWrite && <button onClick={() => openEdit(v)} className="text-xs text-slate-500 hover:text-blue-600">Edit</button>}
+                          {canWrite && (
+                            <button
+                              onClick={() => setArchiveTarget(v)}
+                              className="text-xs text-slate-500 hover:text-amber-600"
+                              title="Archive fails with 409 if the vehicle has an open job"
+                            >
+                              {(v as unknown as { status?: string }).status === 'ARCHIVED' ? 'Reactivate' : 'Archive'}
+                            </button>
+                          )}
                         </div></td>
                       </tr>
                     )
@@ -318,7 +340,14 @@ export default function Vehicles() {
       <Modal open={addOpen} onClose={() => !saving && setAddOpen(false)} title={editing ? 'Edit vehicle' : t('vehicles.modal.registerTitle')} size="md"
         footer={<><Button variant="secondary" disabled={saving} onClick={() => setAddOpen(false)}>{t('action.cancel')}</Button><Button disabled={saving} onClick={save}>{saving ? 'Saving…' : editing ? 'Save' : t('vehicles.modal.registerBtn')}</Button></>}>
         <div className="flex flex-col gap-4">
-          {!editing && <Input label="Customer ID (UUID)" value={form.customerId} onChange={(e) => setField('customerId', e.target.value)} placeholder="Select customer first" required error={errors.customerId} />}
+          {!editing && (
+            customerOptions.length > 0 ? (
+              <Select label="Customer" value={form.customerId} onChange={(e) => setField('customerId', e.target.value)}
+                options={[{ value: '', label: 'Select customer' }, ...customerOptions.map((c) => ({ value: c.id, label: c.displayName }))]} required error={errors.customerId} />
+            ) : (
+              <Input label="Customer ID (UUID)" value={form.customerId} onChange={(e) => setField('customerId', e.target.value)} placeholder="Paste customer UUID" required error={errors.customerId} />
+            )
+          )}
           <div className="grid grid-cols-2 gap-4">
             <Input label="Make" value={form.make} onChange={(e) => setField('make', e.target.value)} required error={errors.make} />
             <Input label="Model" value={form.model} onChange={(e) => setField('model', e.target.value)} required error={errors.model} />
@@ -327,8 +356,12 @@ export default function Vehicles() {
             <Input label="Year" type="number" value={form.year} onChange={(e) => setField('year', e.target.value)} required error={errors.year} />
             <Input label="Plate" value={form.plate} onChange={(e) => setField('plate', e.target.value)} required error={errors.plate} />
           </div>
-          <Input label="VIN (17 chars)" value={form.vin} onChange={(e) => setField('vin', e.target.value.toUpperCase())} error={errors.vin} />
-          <Input label="Mileage (whole km, only increases)" type="number" value={form.mileage} onChange={(e) => setField('mileage', e.target.value)} error={errors.mileage} />
+          <Input label="VIN (17 chars)" value={form.vin} onChange={(e) => setField('vin', e.target.value.toUpperCase())} required error={errors.vin} />
+          <div className="grid grid-cols-2 gap-4">
+            <Input label="Mileage (whole km, only increases)" type="number" value={form.mileage} onChange={(e) => setField('mileage', e.target.value)} required error={errors.mileage} />
+            <Select label="Unit" value={form.mileageUnit} onChange={(e) => setField('mileageUnit', e.target.value)}
+              options={[{ value: 'KM', label: 'KM' }, { value: 'MI', label: 'MI' }]} />
+          </div>
           {saveError ? <FieldErrors error={saveError} /> : null}
         </div>
       </Modal>
@@ -346,12 +379,13 @@ export default function Vehicles() {
         </div>
       </Modal>
 
-      <ConfirmDialog open={!!archiveTarget} title="Archive vehicle"
-        message={archiveTarget ? `Archive ${(archiveTarget as unknown as { plate?: string }).plate}? Fails with 409 RESOURCE_IN_USE if the vehicle has an open job.` : ''}
-        confirmLabel="Archive" destructive onConfirm={() => confirmArchive('ARCHIVED')} onCancel={() => setArchiveTarget(null)} />
+      <ConfirmDialog open={!!archiveTarget} title={(archiveTarget as unknown as { status?: string } | null)?.status === 'ARCHIVED' ? 'Reactivate vehicle' : 'Archive vehicle'}
+        message={archiveTarget ? ((archiveTarget as unknown as { status?: string }).status === 'ARCHIVED'
+          ? `Reactivate ${(archiveTarget as unknown as { plate?: string }).plate}?`
+          : `Archive ${(archiveTarget as unknown as { plate?: string }).plate}? Fails with 409 RESOURCE_IN_USE if the vehicle has an open job.`) : ''}
+        confirmLabel={(archiveTarget as unknown as { status?: string } | null)?.status === 'ARCHIVED' ? 'Reactivate' : 'Archive'}
+        destructive={(archiveTarget as unknown as { status?: string } | null)?.status !== 'ARCHIVED'}
+        onConfirm={() => confirmArchive((archiveTarget as unknown as { status?: string })?.status === 'ARCHIVED' ? 'ACTIVE' : 'ARCHIVED')} onCancel={() => setArchiveTarget(null)} />
     </div>
   )
 }
-
-// Re-export to keep linter happy about unused import guard
-export { customersV3 }
