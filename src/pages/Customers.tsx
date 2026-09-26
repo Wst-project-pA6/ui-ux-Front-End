@@ -285,7 +285,7 @@ export default function Customers() {
               {t('customers.addBtn')}
             </Button>
           ) : (
-            <span title="Requires customers.write permission (Service Advisor role)">
+            <span title="Requires customers.write permission">
               <Button disabled>{t('customers.addBtn')}</Button>
             </span>
           )

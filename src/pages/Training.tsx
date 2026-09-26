@@ -316,7 +316,7 @@ function SessionsTab({ canManage }: { canManage: boolean }) {
           {canManage ? (
             <Button size="sm" onClick={openCreate}>{t('training.sessions.new')}</Button>
           ) : (
-            <span className="text-xs text-slate-400" title="Requires training.manage permission (Training Supervisor role)">New session (no permission)</span>
+            <span className="text-xs text-slate-400" title="Requires training.manage permission">New session (no permission)</span>
           )}
           <span className="text-xs text-slate-400 ms-auto">{meta.totalItems} · {t('training.sessions.title')}</span>
         </div>

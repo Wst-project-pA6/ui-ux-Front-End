@@ -307,7 +307,7 @@ export default function JobCards() {
           </div>
           {canCreate
             ? <Button onClick={() => { setCreateError(null); setCreateOpen(true) }}>{t('jobCards.newBtn')}</Button>
-            : <span title="Requires jobs.create permission (Service Advisor role)"><Button disabled>{t('jobCards.newBtn')}</Button></span>}
+            : <span title="Requires jobs.create permission"><Button disabled>{t('jobCards.newBtn')}</Button></span>}
         </>} />
 
       <div className="flex items-center gap-3 flex-wrap">

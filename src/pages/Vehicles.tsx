@@ -224,7 +224,7 @@ export default function Vehicles() {
       <PageHeader title={t('vehicles.title')} subtitle={`${meta.totalItems} vehicles`}
         actions={canWrite
           ? <Button onClick={() => { setEditing(null); setForm({ ...emptyForm, customerId }); setErrors({}); setSaveError(null); setAddOpen(true) }}>{t('vehicles.registerBtn')}</Button>
-          : <span title="Requires vehicles.write permission (Service Advisor role)"><Button disabled>{t('vehicles.registerBtn')}</Button></span>} />
+          : <span title="Requires vehicles.write permission"><Button disabled>{t('vehicles.registerBtn')}</Button></span>} />
 
       <div className="bg-white border border-slate-200 rounded-xl">
         <div className="flex flex-col gap-2 px-4 py-3 border-b border-slate-100 md:flex-row md:items-center md:gap-3">
