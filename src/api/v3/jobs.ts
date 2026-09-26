@@ -89,8 +89,8 @@ export const jobsV3 = {
       query: query as Record<string, string | number | boolean | undefined>,
       signal,
     }),
-  reserve: (jobId: string, payload: Schemas['PartReservationCreateRequest'], signal?: AbortSignal) =>
-    request<PartReservation>(`/job-cards/${jobId}/part-reservations`, { method: 'POST', body: payload, signal }),
+  reserve: (jobId: string, payload: Schemas['PartReservationCreateRequest'], idempotencyKey: string = newIdempotencyKey(), signal?: AbortSignal) =>
+    request<PartReservation>(`/job-cards/${jobId}/part-reservations`, { method: 'POST', body: payload, idempotencyKey, signal }),
   releaseReservation: (jobId: string, reservationId: string, signal?: AbortSignal) =>
     request<PartReservation>(`/job-cards/${jobId}/part-reservations/${reservationId}/release`, { method: 'POST', signal }),
   issues: (jobId: string, query?: { page?: number; pageSize?: number }, signal?: AbortSignal) =>
