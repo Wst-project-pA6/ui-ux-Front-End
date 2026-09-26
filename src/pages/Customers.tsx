@@ -33,7 +33,7 @@ export default function Customers() {
   const navigate = useNavigate()
   const { t } = useLang()
   const { showToast } = useToast()
-  const { hasPermission } = useAuth()
+  const { hasPermission, organizationScopeIds } = useAuth()
 
   const canRead = hasPermission(PERMS.customersRead)
   const canWrite = hasPermission(PERMS.customersWrite)
@@ -108,10 +108,19 @@ export default function Customers() {
         setForm((f) => ({ ...f, organizationScopeId: res.items[0].id }))
       }
     } catch {
-      /* scope picker falls back to manual entry */
+      // Roles without scopes.manage/users.read (e.g. Service Advisor) get a 403
+      // here — fall back to the caller's own assigned unit(s) from /auth/me
+      // instead of making the user hand-type a UUID.
+      if (organizationScopeIds.length > 0) {
+        const own = organizationScopeIds.map((id) => ({ id, name: undefined }))
+        setScopes(own)
+        if (organizationScopeIds.length === 1 && !form.organizationScopeId) {
+          setForm((f) => ({ ...f, organizationScopeId: organizationScopeIds[0] }))
+        }
+      }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, [organizationScopeIds])
 
   useEffect(() => {
     loadScopes()

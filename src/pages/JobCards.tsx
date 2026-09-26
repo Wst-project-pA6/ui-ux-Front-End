@@ -867,7 +867,7 @@ function LaborTab({ job, entries, workItems, canWrite, onReload, showToast }: {
         return (
           <div key={e.id} className="border border-slate-100 rounded-lg p-3">
             <p className="text-sm">{String(r.description ?? '—')} · {String(r.durationMinutes)} min · {r.workDate as string} · {String(r.status)}</p>
-            <p className="text-xs text-slate-500">Amount: {formatMoney((e as unknown as { amount?: never }).amount as never)}{(e as unknown as { hourlyRate?: never }).hourlyRate ? ` · rate ${formatMoney((e as unknown as { hourlyRate?: never }).hourlyRate as never)}` : ' (rate hidden for your role)'}</p>
+            <p className="text-xs text-slate-500">Amount: {formatMoney((e as unknown as { amount?: never }).amount as never)}{(e as unknown as { hourlyRate?: never }).hourlyRate ? ` · rate ${formatMoney((e as unknown as { hourlyRate?: never }).hourlyRate as never)}` : ' (cost hidden for your role)'}</p>
             {canWrite && r.status === 'ACTIVE' && (
               <div className="flex gap-2 mt-2">
                 <Button variant="secondary" size="sm" onClick={() => { setCorrectId(e.id); setCorrectForm({ durationMinutes: '', changeReason: '' }) }}>Correct</Button>

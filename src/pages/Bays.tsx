@@ -44,7 +44,7 @@ function formatTs(iso: string): string {
 export default function Bays() {
   const { t } = useLang()
   const { showToast } = useToast()
-  const { hasPermission } = useAuth()
+  const { hasPermission, organizationScopeIds } = useAuth()
 
   const canManage = hasPermission(PERMS.baysManage)
 
@@ -100,9 +100,14 @@ export default function Bays() {
       const res = await request<{ items: Scope[] }>('/organization-scopes', { query: { page: 1, pageSize: 100 } })
       setScopes(res.items ?? [])
     } catch {
-      /* scope picker falls back to manual entry */
+      // Workshop Manager has bays.manage but not scopes.manage/users.read, so
+      // this list is a 403 for them — fall back to their own unit(s) from
+      // /auth/me instead of making them hand-type a UUID.
+      if (organizationScopeIds.length > 0) {
+        setScopes(organizationScopeIds.map((id) => ({ id, name: undefined })))
+      }
     }
-  }, [])
+  }, [organizationScopeIds])
 
   useEffect(() => {
     loadScopes()

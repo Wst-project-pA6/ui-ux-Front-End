@@ -628,6 +628,7 @@ function CoursesTab({ canManage }: { canManage: boolean }) {
 
 function OrgScopePicker({ onPick }: { onPick: (id: string) => void }) {
   const { t } = useLang()
+  const { organizationScopeIds } = useAuth()
   const [scopes, setScopes] = useState<{ id: string; name?: string }[]>([])
   const [value, setValue] = useState('')
   useEffect(() => {
@@ -645,10 +646,19 @@ function OrgScopePicker({ onPick }: { onPick: (id: string) => void }) {
         }
       })
       .catch(() => {
-        /* supervisors may lack scopes.manage — manual UUID entry below */
+        // Training Supervisor has training.manage but not scopes.manage/
+        // users.read, so this list is a 403 for them — fall back to their
+        // own unit(s) from /auth/me instead of making them hand-type a UUID.
+        if (organizationScopeIds.length > 0) {
+          setScopes(organizationScopeIds.map((id) => ({ id })))
+          if (organizationScopeIds.length === 1) {
+            setValue(organizationScopeIds[0])
+            onPick(organizationScopeIds[0])
+          }
+        }
       })
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, [organizationScopeIds])
   if (scopes.length === 0) {
     return <Input label={t('training.terms.orgScope')} value={value} onChange={(e) => { setValue(e.target.value); onPick(e.target.value) }} required placeholder={t('training.terms.orgScopePlaceholder')} />
   }
