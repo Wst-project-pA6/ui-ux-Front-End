@@ -68,6 +68,7 @@ export default function JobCards() {
   // Create form
   const [createOpen, setCreateOpen] = useState(false)
   const [serviceTypes, setServiceTypes] = useState<{ id: string; name: string; code?: string }[]>([])
+  const [vehicles, setVehicles] = useState<{ id: string; plate: string; make: string; model: string; year: number; mileage: number }[]>([])
   const [createForm, setCreateForm] = useState({ vehicleId: '', complaint: '', serviceTypeId: '', priority: 'NORMAL', mileageAtIntake: '', expectedCompletionAt: '', workItems: '' })
   const [createError, setCreateError] = useState<unknown>(null)
   const [intakePhotos, setIntakePhotos] = useState<string[]>([])
@@ -165,15 +166,17 @@ export default function JobCards() {
 
   const loadPickers = useCallback(async () => {
     try {
-      const [st, b, tc] = await Promise.all([
+      const [st, b, tc, vs] = await Promise.all([
         serviceTypesV3.list({ page: 1, pageSize: 100 }).catch(() => ({ items: [] })),
         baysV3.list({ page: 1, pageSize: 100 }).catch(() => ({ items: [] })),
         techniciansV3.list({ page: 1, pageSize: 100 }).catch(() => ({ items: [] })),
+        vehiclesV3.list({ page: 1, pageSize: 100, status: 'ACTIVE' }).catch(() => ({ items: [] })),
       ])
       const stItems = Array.isArray(st) ? st : (st as { items: never[] }).items ?? []
       setServiceTypes((stItems as unknown as { id: string; name: string }[]).map((s) => ({ id: s.id, name: (s as unknown as { name?: string }).name ?? s.id })))
       setBays((((b as { items: never[] }).items ?? []) as unknown as { id: string; name: string }[]))
       setTechnicians((((tc as { items: never[] }).items ?? []) as unknown as { id: string; displayName: string }[]))
+      setVehicles((((vs as { items: never[] }).items ?? []) as unknown as { id: string; plate: string; make: string; model: string; year: number; mileage: number }[]))
     } catch { /* pickers optional */ }
   }, [])
 
@@ -197,6 +200,11 @@ export default function JobCards() {
     }
     if (createForm.mileageAtIntake === '' || !Number.isInteger(Number(createForm.mileageAtIntake)) || Number(createForm.mileageAtIntake) < 0) {
       setCreateError(new ApiError({ message: 'Mileage at intake is required (whole number ≥ 0) and must be ≥ vehicle mileage.', code: 'BAD_REQUEST', status: 400 }))
+      return
+    }
+    const selectedVehicle = vehicles.find((x) => x.id === createForm.vehicleId)
+    if (selectedVehicle && Number(createForm.mileageAtIntake) < selectedVehicle.mileage) {
+      setCreateError(new ApiError({ message: `Mileage at intake (${createForm.mileageAtIntake}) is below the vehicle's recorded mileage (${selectedVehicle.mileage}).`, code: 'BAD_REQUEST', status: 400 }))
       return
     }
     setSaving(true)
@@ -464,7 +472,21 @@ export default function JobCards() {
         footer={<><Button variant="secondary" disabled={saving} onClick={() => setCreateOpen(false)}>Cancel</Button><Button disabled={saving} onClick={create}>{saving ? 'Creating…' : 'Create'}</Button></>}>
         <div className="flex flex-col gap-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <Input label="Vehicle ID (UUID)" value={createForm.vehicleId} onChange={(e) => setCreateForm({ ...createForm, vehicleId: e.target.value })} required placeholder="Pick a vehicle, paste its UUID" />
+            {vehicles.length > 0 ? (
+              <Select label="Vehicle" value={createForm.vehicleId}
+                onChange={(e) => {
+                  const id = e.target.value
+                  const v = vehicles.find((x) => x.id === id)
+                  setCreateForm({
+                    ...createForm,
+                    vehicleId: id,
+                    mileageAtIntake: v && !createForm.mileageAtIntake ? String(v.mileage) : createForm.mileageAtIntake,
+                  })
+                }}
+                options={[{ value: '', label: 'Select vehicle' }, ...vehicles.map((x) => ({ value: x.id, label: `${x.plate} · ${x.make} ${x.model} (${x.year}) · ${x.mileage} km` }))]} required />
+            ) : (
+              <Input label="Vehicle ID (UUID)" value={createForm.vehicleId} onChange={(e) => setCreateForm({ ...createForm, vehicleId: e.target.value })} required placeholder="Pick a vehicle, paste its UUID" />
+            )}
             <Select label="Service type" value={createForm.serviceTypeId} onChange={(e) => setCreateForm({ ...createForm, serviceTypeId: e.target.value })}
               options={[{ value: '', label: 'Select type' }, ...serviceTypes.map((s) => ({ value: s.id, label: s.name }))]} required />
           </div>
