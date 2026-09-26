@@ -85,7 +85,7 @@ body,
 }
 
 body {
-  font-family: 'Inter', system-ui, sans-serif;
+  font-family: 'Inter', 'Noto Sans Arabic', system-ui, sans-serif;
   background-color: #F8FAFC;
   color: #0F172A;
   -webkit-font-smoothing: antialiased;

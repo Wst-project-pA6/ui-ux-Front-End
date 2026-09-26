@@ -187,8 +187,16 @@ export default function JobCards() {
       setCreateError(new ApiError({ message: 'Vehicle, complaint and service type are required.', code: 'BAD_REQUEST', status: 400 }))
       return
     }
+    if (createForm.complaint.trim().length < 3 || createForm.complaint.trim().length > 2000) {
+      setCreateError(new ApiError({ message: 'Complaint must be 3–2000 characters.', code: 'BAD_REQUEST', status: 400 }))
+      return
+    }
     if (!createForm.expectedCompletionAt) {
       setCreateError(new ApiError({ message: 'Expected completion is required (contract v4).', code: 'BAD_REQUEST', status: 400 }))
+      return
+    }
+    if (createForm.mileageAtIntake === '' || !Number.isInteger(Number(createForm.mileageAtIntake)) || Number(createForm.mileageAtIntake) < 0) {
+      setCreateError(new ApiError({ message: 'Mileage at intake is required (whole number ≥ 0) and must be ≥ vehicle mileage.', code: 'BAD_REQUEST', status: 400 }))
       return
     }
     setSaving(true)
@@ -256,6 +264,10 @@ export default function JobCards() {
       showToast('error', 'Bay and technician required', '')
       return
     }
+    if (!assignForm.scheduledStartAt || !assignForm.expectedCompletionAt) {
+      showToast('error', 'Schedule required', 'Scheduled start and expected completion are required (contract: JobAssignmentDto).')
+      return
+    }
     setSaving(true)
     setConflicts([])
     try {
@@ -263,8 +275,8 @@ export default function JobCards() {
         version: (detail as unknown as { version?: number }).version,
         bayId: assignForm.bayId,
         technicianId: assignForm.technicianId,
-        scheduledStartAt: assignForm.scheduledStartAt ? new Date(assignForm.scheduledStartAt).toISOString() : undefined,
-        expectedCompletionAt: assignForm.expectedCompletionAt ? new Date(assignForm.expectedCompletionAt).toISOString() : undefined,
+        scheduledStartAt: new Date(assignForm.scheduledStartAt).toISOString(),
+        expectedCompletionAt: new Date(assignForm.expectedCompletionAt).toISOString(),
         ...(assignForm.overrideReason.trim() ? { overrideReason: assignForm.overrideReason.trim() } : {}),
       } as never)
       setDetail(updated)
@@ -293,7 +305,9 @@ export default function JobCards() {
             <button onClick={() => setView('table')} className={`px-3 py-1.5 text-sm font-medium ${view === 'table' ? 'bg-slate-900 text-white' : 'text-slate-600'}`}>{t('jobCards.view.table')}</button>
             <button onClick={() => setView('kanban')} className={`px-3 py-1.5 text-sm font-medium ${view === 'kanban' ? 'bg-slate-900 text-white' : 'text-slate-600'}`}>{t('jobCards.view.kanban')}</button>
           </div>
-          {canCreate && <Button onClick={() => { setCreateError(null); setCreateOpen(true) }}>{t('jobCards.newBtn')}</Button>}
+          {canCreate
+            ? <Button onClick={() => { setCreateError(null); setCreateOpen(true) }}>{t('jobCards.newBtn')}</Button>
+            : <span title="Requires jobs.create permission (Service Advisor role)"><Button disabled>{t('jobCards.newBtn')}</Button></span>}
         </>} />
 
       <div className="flex items-center gap-3 flex-wrap">
@@ -303,7 +317,7 @@ export default function JobCards() {
           {STAGES.map((s) => <option key={s} value={s}>{s}</option>)}
         </select>
         <select value={priority} onChange={(e) => { setPriority(e.target.value); setPage(1) }} className="h-9 px-3 border border-slate-200 rounded-lg text-sm bg-white">
-          <option value="">All priorities</option><option value="HIGH">High</option><option value="NORMAL">Normal</option><option value="LOW">Low</option>
+          <option value="">All priorities</option><option value="HIGH">High</option><option value="NORMAL">Normal</option><option value="LOW">Low</option><option value="URGENT">Urgent</option>
         </select>
         {(stage || priority || q) && <button onClick={() => { setQ(''); setStage(''); setPriority(''); setPage(1) }} className="text-xs text-slate-500 font-medium">Clear filters</button>}
       </div>
@@ -383,6 +397,7 @@ export default function JobCards() {
             <Button variant="secondary" onClick={() => setDetailId(null)}>{t('action.close')}</Button>
             {detail && stageOf(detail) === 'RECEIVED' && canStart && <Button disabled={saving} onClick={() => setPendingTransition('IN_PROGRESS')}>Start work</Button>}
             {detail && stageOf(detail) === 'IN_PROGRESS' && canSubmitQc && <Button disabled={saving} onClick={() => setPendingTransition('QUALITY_CHECK')}>Send to quality check</Button>}
+            {detail && stageOf(detail) === 'QUALITY_CHECK' && canQuality && <Button disabled={saving} onClick={() => setPendingTransition('READY')}>Mark ready (QC passed)</Button>}
             {detail && stageOf(detail) === 'READY' && canDeliver && <Button disabled={saving} onClick={() => setPendingTransition('DELIVERED')}>Deliver</Button>}
           </>}>
           {detailLoading || !detail ? <LoadingState /> : (

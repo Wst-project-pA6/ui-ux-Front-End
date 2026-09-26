@@ -169,18 +169,34 @@ function SessionsTab({ canManage }: { canManage: boolean }) {
       setSaveError(new ApiError({ message: 'Title, course, bay, mentor, start and end are required.', code: 'BAD_REQUEST', status: 400 }))
       return
     }
+    const groupIds = form.groupIds.split(',').map((s) => s.trim()).filter(Boolean)
+    if (groupIds.length === 0) {
+      setSaveError(new ApiError({ message: 'At least one group is required (groupIds minItems 1).', code: 'BAD_REQUEST', status: 400 }))
+      return
+    }
+    const capacity = Number(form.capacity)
+    if (!form.capacity || !Number.isInteger(capacity) || capacity < 1) {
+      setSaveError(new ApiError({ message: 'Capacity is required (whole number ≥ 1).', code: 'BAD_REQUEST', status: 400 }))
+      return
+    }
+    const startsAt = new Date(form.startsAt)
+    const endsAt = new Date(form.endsAt)
+    if (Number.isNaN(startsAt.getTime()) || Number.isNaN(endsAt.getTime()) || startsAt >= endsAt) {
+      setSaveError(new ApiError({ message: 'End must be after start (startsAt < endsAt).', code: 'BAD_REQUEST', status: 400 }))
+      return
+    }
     setBusy(true)
     setSaveError(null)
     try {
       const payload = {
         title: form.title.trim(),
         courseId: form.courseId,
-        groupIds: form.groupIds.split(',').map((s) => s.trim()).filter(Boolean),
+        groupIds,
         bayId: form.bayId,
         mentorId: form.mentorId,
-        capacity: Number(form.capacity),
-        startsAt: new Date(form.startsAt).toISOString(),
-        endsAt: new Date(form.endsAt).toISOString(),
+        capacity,
+        startsAt: startsAt.toISOString(),
+        endsAt: endsAt.toISOString(),
       }
       if (editing) {
         await trainingV3.updateSession(editing.id, {
@@ -297,7 +313,11 @@ function SessionsTab({ canManage }: { canManage: boolean }) {
             <option value="">{t('ai.allStatuses')}</option>
             {['DRAFT', 'PUBLISHED', 'COMPLETED', 'CANCELLED'].map((s) => <option key={s} value={s}>{s}</option>)}
           </select>
-          {canManage && <Button size="sm" onClick={openCreate}>{t('training.sessions.new')}</Button>}
+          {canManage ? (
+            <Button size="sm" onClick={openCreate}>{t('training.sessions.new')}</Button>
+          ) : (
+            <span className="text-xs text-slate-400" title="Requires training.manage permission (Training Supervisor role)">New session (no permission)</span>
+          )}
           <span className="text-xs text-slate-400 ms-auto">{meta.totalItems} · {t('training.sessions.title')}</span>
         </div>
         {state === 'loading' && <div className="p-4"><LoadingState /></div>}

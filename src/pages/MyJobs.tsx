@@ -5,6 +5,7 @@ import { PageHeader } from '../components/ui/PageHeader'
 import { Button } from '../components/ui/Button'
 import { jobsV3, type JobCard } from '../api/v3/jobs'
 import { LoadingState, EmptyState, ErrorState } from '../components/common/ApiStates'
+import { useLang } from '../i18n/LanguageContext'
 
 /**
  * Technician's assigned jobs. The backend scopes GET /job-cards to the
@@ -14,6 +15,7 @@ import { LoadingState, EmptyState, ErrorState } from '../components/common/ApiSt
  */
 export default function MyJobs() {
   const navigate = useNavigate()
+  const { lang } = useLang()
   const [items, setItems] = useState<JobCard[]>([])
   const [meta, setMeta] = useState({ page: 1, pageSize: 20, totalItems: 0, totalPages: 1 })
   const [page, setPage] = useState(1)
@@ -36,7 +38,7 @@ export default function MyJobs() {
 
   useEffect(() => { load() }, [load])
 
-  const today = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })
+  const today = new Date().toLocaleDateString(lang === 'ar' ? 'ar-EG' : 'en-US', { weekday: 'long', month: 'long', day: 'numeric' })
   const stageOf = (j: JobCard) => (j as unknown as { stage?: string }).stage ?? ''
 
   return (
@@ -52,6 +54,7 @@ export default function MyJobs() {
           <div key={s.label} className="bg-white border border-slate-200 rounded-xl p-4 text-center">
             <p className="text-2xl font-bold text-slate-900">{s.count}</p>
             <p className="text-xs text-slate-500 mt-0.5">{s.label}</p>
+            <p className="text-[10px] text-slate-400 mt-0.5">this page · {meta.totalItems} total</p>
           </div>
         ))}
       </div>
